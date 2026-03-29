@@ -1,10 +1,13 @@
 package backend_gl
 
-when ODIN_OS != .Darwin {
+when ODIN_OS != .Darwin 
+{
     LAST_FEATURES :: true
     MAJOR         :: 4
     MINOR         :: 6
-} else {
+} 
+else 
+{
     LAST_FEATURES :: false
     MAJOR         :: 4
     MINOR         :: 1
