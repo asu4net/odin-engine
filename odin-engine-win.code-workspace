@@ -1,0 +1,36 @@
+{
+    "folders": [
+        {
+            "path": ".",
+        }
+    ],
+    "tasks": {
+        "version": "2.0.0",
+        "presentation": {
+            "reveal": "always",
+            "clear": true
+        },
+        "tasks": [
+            {
+                "label": "build-debug",
+                "command": "./build.bat",
+                "group": {
+                    "kind": "build", 
+                    "isDefault": true
+                }     
+            }
+        ]
+    },
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "name": "debug",
+                "type": "cppvsdbg",
+                "request": "launch",
+                "program": "${workspaceFolder}/.bin/debug/game.exe",
+                "stopAtEntry": false
+            }
+        ]
+    }
+}
