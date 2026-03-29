@@ -1,7 +1,7 @@
 {
 	"$schema": "https://raw.githubusercontent.com/DanielGavin/ols/master/misc/ols.schema.json",
 	"collections": [
-		{ "name": "game", "path": "./game" }
+		{ "name": "engine", "path": "./engine" }
 	],
 	"enable_semantic_tokens": false,
 	"enable_document_symbols": true,
@@ -12,7 +12,7 @@
 		{ 
             "name": "debug", 
             "checker_path": [
-                "./", 
+                "./engine", 
                 "./game" 
             ], 
             "defines": { 

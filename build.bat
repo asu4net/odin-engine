@@ -1,14 +1,14 @@
 @echo off
 
 set title=game
-set target=.\%title%
+set target=.\game
 set out=%title%.exe
-set sdl_source=lib\SDL3.dll
+set sdl_source=engine\3rd\sdl\bin\win\SDL3.dll
 
-set debug_out=.bin\debug
-set release_out=.bin\release
+set debug_out=.out\debug
+set release_out=.out\release
 
-set build=odin build %target% -vet-semicolon -show-timings
+set build=odin build %target% -vet-semicolon -show-timings -collection:engine=./engine
 set debug=%build% -debug -o:none -out:%debug_out%\%out%
 set release=%build% -debug -o:none -out:%release_out%\%out%
 

@@ -28,7 +28,7 @@
                 "name": "debug",
                 "type": "lldb-dap",
                 "request": "launch",
-                "program": "${workspaceFolder}/.bin/debug/game",
+                "program": "${workspaceFolder}/.out/debug/game",
             }
         ]
     }

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
 title="game"
-target="./$title"
+target="./game"
 out="$title"
 
-debug_out=".bin/debug"
-release_out=".bin/release"
+debug_out=".out/debug"
+release_out=".out/release"
 
-build="odin build $target -vet-semicolon -show-timings"
+build="odin build $target -vet-semicolon -show-timings -collection:engine=./engine"
 debug="$build -debug -o:none -out:$debug_out/$out"
 release="$build -debug -o:none -out:$release_out/$out"
 
