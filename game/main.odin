@@ -104,25 +104,29 @@ main :: proc()
 	// @Region: Main Loop
     // ====================================================================
 
-	main_loop: for !quit {
-
+	main_loop: for !quit 
+    {
 		// Time step.
-
 		current_time := time.duration_seconds(time.tick_since(start_tick))
 		dt := clamp(f32(current_time - last_time), 0, 0.1) 
 		last_time = current_time
 
 		// Process events.
-
 		{
 			event: sdl.Event
-			for sdl.PollEvent(&event) {
-				if event.type == .QUIT {
+			for sdl.PollEvent(&event) 
+            {
+				if event.type == .QUIT 
+                {
 					quit = true
+                    break main_loop
 				}
-                when ODIN_DEBUG {
-                    if event.type == .KEY_DOWN && event.key.key == sdl.K_ESCAPE {
+                when ODIN_DEBUG 
+                {
+                    if event.type == .KEY_DOWN && event.key.key == sdl.K_ESCAPE 
+                    {
                         quit = true
+                        break main_loop
                     }
                 }
 			}
