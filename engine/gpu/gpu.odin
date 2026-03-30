@@ -132,13 +132,42 @@ clear_screen :: #force_inline proc(color: [4]f32 = {0, 0, 0, 1})
 
 Shader_Handle :: handle_map.Handle32
 
+// ====================================================================
+// @Region: Vertex Buffer
+// ====================================================================
+
+Vertex_Buffer_Def :: struct
+{
+    data: rawptr,
+    len: int,
+    vsize: int, 
+    attrs: [] Data_Type,
+    elems: [] u32,
+}
+
+Vertex_Buffer_Handle :: handle_map.Handle32
+
+add_vertex_buffer :: #force_inline proc(def: Vertex_Buffer_Def) -> (handle: Vertex_Buffer_Handle, ok: bool) #optional_ok
+{
+    when OPENGL
+    {
+        return add_vertex_buffer_gl(def)
+    }
+    else
+    {
+        #assert(false, "Error! Missing implementation.")
+        return {}
+    }
+}
+
 // ===================================================
 // @Constants:
 // ===================================================
 
 // @Robustness: For now we force OpenGL implemetation.
-OPENGL :: true
-MAX_SHADERS :: 100
+OPENGL             :: true
+MAX_SHADERS        :: 100
+MAX_VERTEX_BUFFERS :: 100
 
 // ===================================================
 // @Imports:

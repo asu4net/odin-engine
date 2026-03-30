@@ -178,21 +178,26 @@ debug_callback_gl :: proc "c" (source: u32, type: u32, id: u32, severity: u32, l
 // @Region: Vertex Buffer
 // ====================================================================
 
-/*
-Vert_View :: struct {
-    data: rawptr,
-    len: int,
-    vsize: int, 
-}
-
 @(private="file")
-Vertex_Buffer_GL :: struct {
+Vertex_Buffer_GL :: struct 
+{
+    handle: Vertex_Buffer_Handle,
     vao, vbo, ebo: u32, 
     len: int,
 }
 
-vertex_buffer_init_gl :: proc(vb: ^Vertex_Buffer_GL, verts: Vert_View, attrs: [] shared.Data_Type, elems: []u32) {
+add_vertex_buffer_gl :: #force_inline proc(def: Vertex_Buffer_Def) -> (handle: Vertex_Buffer_Handle, ok: bool) #optional_ok
+{
+    return handle_map.add(&vertex_buffers_gl, create_vertex_buffer_gl(def))
+}
 
+remove_vertex_buffer_gl :: #force_inline proc(handle: Vertex_Buffer_Handle)
+{
+    handle_map.remove(&vertex_buffers_gl, handle)
+}
+
+create_vertex_buffer_gl :: proc(def: Vertex_Buffer_Def) -> Vertex_Buffer_GL
+{
     vao, vbo, ebo: u32
 
     gl.GenVertexArrays(1, &vao)
@@ -201,39 +206,48 @@ vertex_buffer_init_gl :: proc(vb: ^Vertex_Buffer_GL, verts: Vert_View, attrs: []
     gl.GenBuffers(1, &vbo)
     gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
 
-    usage  := u32(verts.data != nil ? gl.STATIC_DRAW : gl.DYNAMIC_DRAW)
-    stride := i32(verts.len > 0 ? verts.vsize : 0)
+    usage  := u32(def.data != nil ? gl.STATIC_DRAW : gl.DYNAMIC_DRAW)
+    stride := i32(def.len > 0 ? def.vsize : 0)
     offset := 0
     
-    gl.BufferData(gl.ARRAY_BUFFER, verts.vsize * verts.len, verts.data, usage)
+    gl.BufferData(gl.ARRAY_BUFFER, def.vsize * def.len, def.data, usage)
     
-    for &attr, i in attrs {
+    for &attr, i in def.attrs {
         if !data_type_is_attribute_gl(attr) do continue
 
         gl.EnableVertexAttribArray(u32(i))
         if !data_type_is_integer(attr) {
-            gl.VertexAttribPointer(u32(i), i32(data_type_len(attr)), data_type_to_gl(attr), gl.FALSE, stride, uintptr(offset))
+            gl.VertexAttribPointer(u32(i), i32(data_type_len(attr)), from_data_type_gl(attr), gl.FALSE, stride, uintptr(offset))
         } else {
-            gl.VertexAttribIPointer(u32(i), i32(data_type_len(attr)), data_type_to_gl(attr), stride, uintptr(offset))
+            gl.VertexAttribIPointer(u32(i), i32(data_type_len(attr)), from_data_type_gl(attr), stride, uintptr(offset))
         }
         offset += data_type_size(attr)
     }
 
     gl.GenBuffers(1, &ebo)
     gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo)
-    gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(elems) * size_of(u32), raw_data(elems), gl.STATIC_DRAW)
-
-    vb.vao = vao
-    vb.vbo = vbo
-    vb.ebo = ebo
-    vb.len = len(elems)
+    gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(def.elems) * size_of(u32), raw_data(def.elems), gl.STATIC_DRAW)
 
     // Clenaup.
     gl.BindVertexArray(0)
     gl.BindBuffer(gl.ARRAY_BUFFER, 0)
     gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
+    
+    return {
+        vao = vao,
+        vbo = vbo,
+        ebo = ebo,
+        len = len(def.elems)
+    }
 }
-*/
+
+destroy_vertex_buffer_gl :: proc(vb: ^Vertex_Buffer_GL)
+{
+    gl.DeleteVertexArrays(1, &vb.vao)
+    gl.DeleteBuffers(1, &vb.vbo)
+    gl.DeleteBuffers(1, &vb.ebo)
+    vb^ = {}
+}
 
 // ====================================================================
 // @Region: Shader
@@ -354,7 +368,8 @@ else
 
 context_gl: sdl.GLContext
 window_gl: ^sdl.Window
-shaders_gl: handle_map.Static_Handle_Map(MAX_SHADERS, Shader_GL, handle_map.Handle32)
+shaders_gl: handle_map.Static_Handle_Map(MAX_SHADERS, Shader_GL, Shader_Handle)
+vertex_buffers_gl: handle_map.Static_Handle_Map(MAX_VERTEX_BUFFERS, Vertex_Buffer_GL, Vertex_Buffer_Handle)
 
 } // when OPENGL
 
