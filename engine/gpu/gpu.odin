@@ -160,6 +160,19 @@ add_vertex_buffer :: #force_inline proc(def: Vertex_Buffer_Def) -> (handle: Vert
     }
 }
 
+remove_vertex_buffer :: #force_inline proc(handle: Vertex_Buffer_Handle)
+{
+    when OPENGL
+    {
+        remove_vertex_buffer_gl(handle)
+    }
+    else
+    {
+        #assert(false, "Error! Missing implementation.")
+        return {}
+    }
+}
+
 // ===================================================
 // @Constants:
 // ===================================================
