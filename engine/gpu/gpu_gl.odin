@@ -354,7 +354,7 @@ else
 
 context_gl: sdl.GLContext
 window_gl: ^sdl.Window
-shaders_gl: handle_map.Static_Handle_Map(1024, Shader_GL, handle_map.Handle32)
+shaders_gl: handle_map.Static_Handle_Map(MAX_SHADERS, Shader_GL, handle_map.Handle32)
 
 } // when OPENGL
 

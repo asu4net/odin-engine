@@ -118,7 +118,7 @@ clear_screen :: #force_inline proc(color: [4]f32 = {0, 0, 0, 1})
 {
     when OPENGL
     {
-        clear_screen_gl()
+        clear_screen_gl(color)
     }
     else
     {
@@ -138,6 +138,7 @@ Shader_Handle :: handle_map.Handle32
 
 // @Robustness: For now we force OpenGL implemetation.
 OPENGL :: true
+MAX_SHADERS :: 100
 
 // ===================================================
 // @Imports:
