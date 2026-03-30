@@ -99,7 +99,7 @@ main :: proc()
 
 	start_tick := time.tick_now()
 	last_time := time.duration_seconds(time.tick_since(start_tick))
-
+	
     // ====================================================================
 	// @Region: Main Loop
     // ====================================================================
