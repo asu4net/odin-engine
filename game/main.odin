@@ -110,7 +110,7 @@ main :: proc()
 	
 	vb := gpu.add_vertex_buffer({
 		data  = raw_data(QUAD_VERTS),
-		len   = len(QUAD_VERTS),
+		count = len(QUAD_VERTS),
 		vsize = size_of(f32) * 4,
 		attrs = {
 			.Float2,

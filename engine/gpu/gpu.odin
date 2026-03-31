@@ -176,7 +176,7 @@ use_shader :: #force_inline proc(handle: Shader_Handle)
 Vertex_Buffer_Def :: struct
 {
     data: rawptr,
-    len: int,
+    count: int,
     vsize: int, 
     attrs: [] Data_Type,
     elems: [] u32,

@@ -210,10 +210,10 @@ create_vertex_buffer_gl :: proc(def: Vertex_Buffer_Def) -> Vertex_Buffer_GL
     gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
 
     usage  := u32(def.data != nil ? gl.STATIC_DRAW : gl.DYNAMIC_DRAW)
-    stride := i32(def.len > 0 ? def.vsize : 0)
+    stride := i32(def.count > 0 ? def.vsize : 0)
     offset := 0
     
-    gl.BufferData(gl.ARRAY_BUFFER, def.vsize * def.len, def.data, usage)
+    gl.BufferData(gl.ARRAY_BUFFER, def.vsize * def.count, def.data, usage)
     
     for &attr, i in def.attrs {
         if !data_type_is_attribute_gl(attr) do continue
