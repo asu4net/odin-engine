@@ -99,12 +99,25 @@ context_destroy_gl :: proc()
 {
     if context_gl != nil 
     {
+        for i in 1..<shader_map_gl.used_len
+        {
+            shader_destroy_gl(&shader_map_gl.items[i])
+        }
+        handle_map.clear(&shader_map_gl)
+
+        for i in 1..<vertex_buffer_map_gl.used_len
+        {
+            vertex_buffer_destroy_gl(&vertex_buffer_map_gl.items[i])
+        }
+        handle_map.clear(&vertex_buffer_map_gl)
+
         log.info("GL SDL Context finish.")
         if !sdl.GL_DestroyContext(context_gl) 
         {
 		    log.errorf("Error: sdl.DestroyContext: %v\n", sdl.GetError())
             return
         }
+        
         context_gl = nil
         window_gl = nil
     }
