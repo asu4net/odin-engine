@@ -12,8 +12,10 @@ void main() {
 
 layout(location = 0) out vec4 o_col;
 
+uniform vec4 u_color;
+
 void main() {
-  o_col = vec4(0, 1, 0, 1);
+  o_col = u_color;
 }
 
 #endif

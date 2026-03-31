@@ -1,16 +1,13 @@
 package gpu
 
-when OPENGL
-{
+when OPENGL {
 
 // ====================================================================
 // @Region: Data_Type
 // ====================================================================
 
-data_type_from_gl :: proc(type: i32) -> Data_Type 
-{
-    switch type 
-    {
+data_type_from_gl :: proc(type: i32) -> Data_Type {
+    switch type {
         case gl.FLOAT      : return .Float
         case gl.FLOAT_VEC2 : return .Float2
         case gl.FLOAT_VEC3 : return .Float3
@@ -27,10 +24,8 @@ data_type_from_gl :: proc(type: i32) -> Data_Type
     return .None
 }
 
-data_type_to_gl :: proc(type: Data_Type) -> u32 
-{
-    switch type 
-    {
+data_type_to_gl :: proc(type: Data_Type) -> u32 {
+    switch type {
         case .Float     : return gl.FLOAT
         case .Float2    : return gl.FLOAT
         case .Float3    : return gl.FLOAT
@@ -48,16 +43,12 @@ data_type_to_gl :: proc(type: Data_Type) -> u32
     return 0
 }
 
-data_type_is_attribute_gl :: proc(type: Data_Type) -> bool 
-{
-    switch type 
-    {
-        case .Float, .Float2, .Float3, .Float4, .Mat3, .Mat4, .Int, .Int2, .Int3, .Int4: 
-        {
+data_type_is_attribute_gl :: proc(type: Data_Type) -> bool {
+    switch type {
+        case .Float, .Float2, .Float3, .Float4, .Mat3, .Mat4, .Int, .Int2, .Int3, .Int4: {
             return true
         }
-        case .Sampler2D, .Bool, .None:
-        {
+        case .Sampler2D, .Bool, .None: {
             return false
         }
     }
@@ -68,8 +59,7 @@ data_type_is_attribute_gl :: proc(type: Data_Type) -> bool
 // @Region: Context
 // ====================================================================
 
-context_create_gl :: proc(window: ^sdl.Window) -> bool
-{
+context_create_gl :: proc(window: ^sdl.Window) -> bool {
     log.info("GL Context start.")
     sdl.GL_SetAttribute(sdl.GL_CONTEXT_MAJOR_VERSION, GL_MAJOR)
     sdl.GL_SetAttribute(sdl.GL_CONTEXT_MINOR_VERSION, GL_MINOR)
@@ -77,16 +67,14 @@ context_create_gl :: proc(window: ^sdl.Window) -> bool
 
     context_gl = sdl.GL_CreateContext(window)
 
-    if context_gl == nil 
-    {
+    if context_gl == nil {
 		log.errorf("Error: sdl.CreateContext: %v\n", sdl.GetError())
         return false
     }
 
     gl.load_up_to(GL_MAJOR, GL_MINOR, sdl.gl_set_proc_address)
 
-    when ODIN_DEBUG && GL_LAST_FEATURES 
-    {
+    when ODIN_DEBUG && GL_LAST_FEATURES {
         gl.DebugMessageCallback(debug_callback_gl, nil)
     }
 
@@ -95,53 +83,40 @@ context_create_gl :: proc(window: ^sdl.Window) -> bool
     return true
 }
 
-context_destroy_gl :: proc() 
-{
-    if context_gl != nil 
-    {
-        for i in 1..<shader_map_gl.used_len
-        {
+context_destroy_gl :: proc() {
+    if context_gl != nil {
+        for i in 1..<shader_map_gl.used_len {
             shader_destroy_gl(&shader_map_gl.items[i])
         }
         handle_map.clear(&shader_map_gl)
-
-        for i in 1..<vertex_buffer_map_gl.used_len
-        {
+        for i in 1..<vertex_buffer_map_gl.used_len {
             vertex_buffer_destroy_gl(&vertex_buffer_map_gl.items[i])
         }
         handle_map.clear(&vertex_buffer_map_gl)
-
         log.info("GL SDL Context finish.")
-        if !sdl.GL_DestroyContext(context_gl) 
-        {
+        if !sdl.GL_DestroyContext(context_gl) {
 		    log.errorf("Error: sdl.DestroyContext: %v\n", sdl.GetError())
             return
         }
-        
         context_gl = nil
         window_gl = nil
     }
 }
 
-swap_buffers_gl :: #force_inline proc() 
-{
+swap_buffers_gl :: #force_inline proc() {
 	sdl.GL_SwapWindow(window_gl)
 }
 
-clear_screen_gl :: #force_inline proc(color: [4]f32 = {0, 0, 0, 1}) 
-{
+clear_screen_gl :: #force_inline proc(color: [4]f32 = {0, 0, 0, 1}) {
 	gl.ClearColor(color.r, color.g, color.b, 1)
 	gl.Clear(gl.COLOR_BUFFER_BIT)
 }
 
-debug_callback_gl :: proc "c" (source: u32, type: u32, id: u32, severity: u32, length: i32, message: cstring, user_param: rawptr) 
-{
+debug_callback_gl :: proc "c" (source: u32, type: u32, id: u32, severity: u32, length: i32, message: cstring, user_param: rawptr) {
     context = runtime.default_context()
 
-    to_string_src :: #force_inline proc(source: u32) -> string 
-    {
-        switch source 
-        {
+    to_string_src :: #force_inline proc(source: u32) -> string {
+        switch source {
             case gl.DEBUG_SOURCE_API:               return "API"
             case gl.DEBUG_SOURCE_WINDOW_SYSTEM:     return "Window System"
             case gl.DEBUG_SOURCE_SHADER_COMPILER:   return "Shader Compiler"
@@ -152,10 +127,8 @@ debug_callback_gl :: proc "c" (source: u32, type: u32, id: u32, severity: u32, l
         }
     }
 
-    to_string_type :: #force_inline proc(type: u32) -> string 
-    {
-        switch type 
-        {
+    to_string_type :: #force_inline proc(type: u32) -> string {
+        switch type {
             case gl.DEBUG_TYPE_ERROR:               return "Error"
             case gl.DEBUG_TYPE_DEPRECATED_BEHAVIOR: return "Deprecated Behavior"
             case gl.DEBUG_TYPE_UNDEFINED_BEHAVIOR:  return "Undefined Behavior"
@@ -168,10 +141,8 @@ debug_callback_gl :: proc "c" (source: u32, type: u32, id: u32, severity: u32, l
 
     Log_Proc :: #type proc(fmt_str: string, args: ..any, location := #caller_location)
 
-    to_proc_severity :: #force_inline proc(severity: u32) -> Log_Proc 
-    {
-        switch severity 
-        {
+    to_proc_severity :: #force_inline proc(severity: u32) -> Log_Proc {
+        switch severity {
             case gl.DEBUG_SEVERITY_HIGH:            return log.errorf
             case gl.DEBUG_SEVERITY_MEDIUM:          return log.warnf
             case gl.DEBUG_SEVERITY_LOW:             return log.warnf
@@ -192,28 +163,24 @@ debug_callback_gl :: proc "c" (source: u32, type: u32, id: u32, severity: u32, l
 // ====================================================================
 
 @(private="file")
-Vertex_Buffer_GL :: struct 
-{
+Vertex_Buffer_GL :: struct {
     handle: Vertex_Buffer_Handle,
     vao, vbo, ebo: u32, 
     elem_count: i32,
 }
 
-vertex_buffer_add_gl :: #force_inline proc(def: Vertex_Buffer_Def) -> (handle: Vertex_Buffer_Handle, ok: bool) #optional_ok
-{
+vertex_buffer_add_gl :: #force_inline proc(def: Vertex_Buffer_Def) -> (handle: Vertex_Buffer_Handle, ok: bool) #optional_ok {
     return handle_map.add(&vertex_buffer_map_gl, vertex_buffer_create_gl(def))
 }
 
-vertex_buffer_rem_gl :: #force_inline proc(handle: Vertex_Buffer_Handle)
-{
+vertex_buffer_rem_gl :: #force_inline proc(handle: Vertex_Buffer_Handle) {
     vb, ok := handle_map.get(&vertex_buffer_map_gl, handle)
     assert(ok, "Error: Invalid vertex buffer.")
     vertex_buffer_destroy_gl(vb)
     handle_map.remove(&vertex_buffer_map_gl, handle)
 }
 
-vertex_buffer_create_gl :: proc(def: Vertex_Buffer_Def) -> Vertex_Buffer_GL
-{
+vertex_buffer_create_gl :: proc(def: Vertex_Buffer_Def) -> Vertex_Buffer_GL {
     vao, vbo, ebo: u32
 
     gl.GenVertexArrays(1, &vao)
@@ -257,8 +224,7 @@ vertex_buffer_create_gl :: proc(def: Vertex_Buffer_Def) -> Vertex_Buffer_GL
     }
 }
 
-vertex_buffer_destroy_gl :: proc(vb: ^Vertex_Buffer_GL)
-{
+vertex_buffer_destroy_gl :: proc(vb: ^Vertex_Buffer_GL) {
     assert(vb.vao != 0 && vb.vbo != 0 && vb.ebo != 0, "Error: Invalid vertex buffer.")
     gl.DeleteVertexArrays(1, &vb.vao)
     gl.DeleteBuffers(1, &vb.vbo)
@@ -266,8 +232,7 @@ vertex_buffer_destroy_gl :: proc(vb: ^Vertex_Buffer_GL)
     vb^ = {}
 }
 
-vertex_buffer_draw_gl :: proc(handle: Vertex_Buffer_Handle, count: i32 = 0, index_offset: u32 = 0)
-{
+vertex_buffer_draw_gl :: proc(handle: Vertex_Buffer_Handle, count: i32 = 0, index_offset: u32 = 0) {
     vb, ok := handle_map.get(&vertex_buffer_map_gl, handle)
     assert(ok, "Error: Invalid vertex buffer.")
     gl.BindVertexArray(vb.vao)
@@ -278,34 +243,28 @@ vertex_buffer_draw_gl :: proc(handle: Vertex_Buffer_Handle, count: i32 = 0, inde
 // @Region: Shader
 // ====================================================================
 
-Shader_GL :: struct
-{
+Shader_GL :: struct {
     handle: Shader_Handle,
     program: u32,
 }
 
-shader_add_gl :: #force_inline proc(def: Shader_Def) -> (handle: Shader_Handle, ok: bool) #optional_ok
-{
+shader_add_gl :: #force_inline proc(def: Shader_Def) -> (handle: Shader_Handle, ok: bool) #optional_ok {
     return handle_map.add(&shader_map_gl, shader_create_gl(def))
 }
 
-shader_get_gl :: #force_inline proc(handle: Shader_Handle) -> ^Shader_GL
-{
+shader_get_gl :: #force_inline proc(handle: Shader_Handle) -> ^Shader_GL {
     shader, ok := handle_map.get(&shader_map_gl, handle)
     assert(ok, "Error: Invalid shader.")
     return shader
 } 
 
-shader_rem_gl :: #force_inline proc(handle: Shader_Handle)
-{
+shader_rem_gl :: #force_inline proc(handle: Shader_Handle) {
     _ = shader_get_gl(handle)
     handle_map.remove(&shader_map_gl, handle)
 }
 
-shader_create_gl :: proc(def: Shader_Def) -> Shader_GL
-{	
-    if len(def.source) == 0 
-    {
+shader_create_gl :: proc(def: Shader_Def) -> Shader_GL {	
+    if len(def.source) == 0 {
 		log.error("Error: The shader source cannot be empty.")
 		return {}
 	}
@@ -313,8 +272,7 @@ shader_create_gl :: proc(def: Shader_Def) -> Shader_GL
 	VERT_PREFIX :: "#version 410 core \n#define VERTEX_SHADER \n"
 	vert := shader_compile_with_prefix_gl(def.source, VERT_PREFIX, gl.VERTEX_SHADER)
 
-	if vert == 0 
-    {
+	if vert == 0 {
 		log.errorf("Error: Vertex Shader compilation failed.")
 		return {}
 	}
@@ -322,8 +280,7 @@ shader_create_gl :: proc(def: Shader_Def) -> Shader_GL
 	FRAG_PREFIX :: "#version 410 core \n#define FRAGMENT_SHADER \n"
 	frag := shader_compile_with_prefix_gl(def.source, FRAG_PREFIX, gl.FRAGMENT_SHADER)
 
-	if frag == 0 
-    {
+	if frag == 0 {
 		log.errorf("Error: Fragment Shader compilation failed.")
 		return {}
 	}
@@ -340,8 +297,7 @@ shader_create_gl :: proc(def: Shader_Def) -> Shader_GL
 	success: i32
 	gl.GetProgramiv(prog, gl.LINK_STATUS, &success)
 
-	if success == 0 
-    {
+	if success == 0 {
 		LOG_BUFFER_SIZE :: 512
 		log_buffer: [LOG_BUFFER_SIZE]u8
 		log_length: i32
@@ -355,80 +311,69 @@ shader_create_gl :: proc(def: Shader_Def) -> Shader_GL
     }
 }
 
-shader_destroy_gl :: proc(shader: ^Shader_GL)
-{
+shader_destroy_gl :: proc(shader: ^Shader_GL) {
     assert(shader.program != 0, "Error: Invalid shader.")
     gl.DeleteProgram(shader.program)
     shader.program = 0
 }
 
-shader_use_gl :: proc(handle: Shader_Handle)
-{
+shader_use_gl :: proc(handle: Shader_Handle) {
     shader := shader_get_gl(handle)
     assert(shader.program != 0, "Error: Invalid shader.")
     gl.UseProgram(shader.program)
 }
 
-shader_get_param_location_gl :: #force_inline proc(shader: Shader_GL, name: string) -> i32 
-{
+shader_get_param_location_gl :: #force_inline proc(shader: Shader_GL, name: string) -> i32 {
     return gl.GetUniformLocation(shader.program, cstring(raw_data(name)))
 }
 
-shader_set_param_float_gl :: proc(handle: Shader_Handle, name: string, value: f32) 
-{
+shader_set_param_float_gl :: proc(handle: Shader_Handle, name: string, value: f32) {
     shader := shader_get_gl(handle)
     location := shader_get_param_location_gl(shader^, name)
     gl.Uniform1f(location, value)
 }
 
-shader_set_param_vec2_gl :: proc(handle: Shader_Handle, name: string, value: [2] f32) 
-{
+shader_set_param_vec2_gl :: proc(handle: Shader_Handle, name: string, value: [2] f32) {
     shader := shader_get_gl(handle)
     location := shader_get_param_location_gl(shader^, name)
     value := value
     gl.Uniform2fv(location, 1, raw_data(value[:]))
 }
 
-shader_set_param_vec3_gl :: proc(handle: Shader_Handle, name: string, value: [3] f32) 
-{
+shader_set_param_vec3_gl :: proc(handle: Shader_Handle, name: string, value: [3] f32) {
     shader := shader_get_gl(handle)
     location := shader_get_param_location_gl(shader^, name)
     value := value
     gl.Uniform3fv(location, 1, raw_data(value[:]))
 }
 
-shader_set_param_vec4_gl :: proc(handle: Shader_Handle, name: string, value: [4] f32) 
-{
+shader_set_param_vec4_gl :: proc(handle: Shader_Handle, name: string, value: [4] f32) {
     shader := shader_get_gl(handle)
     location := shader_get_param_location_gl(shader^, name)
     value := value
     gl.Uniform4fv(location, 1, raw_data(value[:]))
 }
 
-shader_set_param_m4_gl :: proc(handle: Shader_Handle, name: string, value: matrix[4, 4] f32) 
-{
+shader_set_param_m4_gl :: proc(handle: Shader_Handle, name: string, value: matrix[4, 4] f32) {
     shader := shader_get_gl(handle)
     location := shader_get_param_location_gl(shader^, name)
     arg := value
     gl.UniformMatrix4fv(location, 1, transpose = false, value = raw_data(&arg))
 }
 
-shader_set_param_int_gl :: proc(handle: Shader_Handle, name: string, value: i32) 
-{
+shader_set_param_int_gl :: proc(handle: Shader_Handle, name: string, value: i32) {
     shader := shader_get_gl(handle)
     location := shader_get_param_location_gl(shader^, name)
     gl.Uniform1i(location, value)
 }
 
-shader_set_param_int_array_gl :: proc(handle: Shader_Handle, name: string, value: [^]i32, count: i32) 
-{
+shader_set_param_int_array_gl :: proc(handle: Shader_Handle, name: string, value: [^]i32, count: i32) {
     shader := shader_get_gl(handle)
     location := shader_get_param_location_gl(shader^, name)
     gl.Uniform1iv(location, count, value)
 }
 
-shader_compile_with_prefix_gl :: proc(source: string, prefix: string, shader_type: u32) -> u32 
-{
+shader_compile_with_prefix_gl :: proc(source: string, prefix: string, shader_type: u32) -> u32 {
 	shader := gl.CreateShader(shader_type)
 
 	sources := [] cstring {
@@ -447,8 +392,7 @@ shader_compile_with_prefix_gl :: proc(source: string, prefix: string, shader_typ
 	success: i32
 	gl.GetShaderiv(shader, gl.COMPILE_STATUS, &success)
 
-	if success == 0 
-    {
+	if success == 0 {
 		LOG_BUFFER_SIZE :: 512
 		log_buffer: [LOG_BUFFER_SIZE]u8
 		log_length: i32
@@ -460,26 +404,23 @@ shader_compile_with_prefix_gl :: proc(source: string, prefix: string, shader_typ
 	return shader
 }
 
-// ===================================================
+// ====================================================================
 // @Constants:
-// ===================================================
+// ====================================================================
 
-when ODIN_OS != .Darwin 
-{
+when ODIN_OS != .Darwin {
     GL_LAST_FEATURES :: true
     GL_MAJOR         :: 4
     GL_MINOR         :: 6
-} 
-else 
-{
+} else {
     GL_LAST_FEATURES :: false
     GL_MAJOR         :: 4
     GL_MINOR         :: 1
 }
 
-// ===================================================
+// ====================================================================
 // @Globals:
-// ===================================================
+// ====================================================================
 
 context_gl: sdl.GLContext
 window_gl: ^sdl.Window
@@ -488,9 +429,9 @@ vertex_buffer_map_gl: handle_map.Static_Handle_Map(MAX_VERTEX_BUFFERS, Vertex_Bu
 
 } // when OPENGL
 
-// ===================================================
+// ====================================================================
 // @Imports:
-// ===================================================
+// ====================================================================
 
 import "base:runtime"
 import "core:log"
