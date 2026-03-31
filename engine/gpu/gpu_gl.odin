@@ -7,7 +7,7 @@ when OPENGL
 // @Region: Data_Type
 // ====================================================================
 
-to_data_type_gl :: proc(type: i32) -> Data_Type 
+data_type_from_gl :: proc(type: i32) -> Data_Type 
 {
     switch type 
     {
@@ -27,7 +27,7 @@ to_data_type_gl :: proc(type: i32) -> Data_Type
     return .None
 }
 
-from_data_type_gl :: proc(type: Data_Type) -> u32 
+data_type_to_gl :: proc(type: Data_Type) -> u32 
 {
     switch type 
     {
@@ -68,7 +68,7 @@ data_type_is_attribute_gl :: proc(type: Data_Type) -> bool
 // @Region: Context
 // ====================================================================
 
-create_context_gl :: proc(window: ^sdl.Window) -> bool
+context_create_gl :: proc(window: ^sdl.Window) -> bool
 {
     log.info("GL Context start.")
     sdl.GL_SetAttribute(sdl.GL_CONTEXT_MAJOR_VERSION, GL_MAJOR)
@@ -95,7 +95,7 @@ create_context_gl :: proc(window: ^sdl.Window) -> bool
     return true
 }
 
-destroy_context_gl :: proc() 
+context_destroy_gl :: proc() 
 {
     if context_gl != nil 
     {
@@ -186,20 +186,20 @@ Vertex_Buffer_GL :: struct
     elem_count: i32,
 }
 
-add_vertex_buffer_gl :: #force_inline proc(def: Vertex_Buffer_Def) -> (handle: Vertex_Buffer_Handle, ok: bool) #optional_ok
+vertex_buffer_add_gl :: #force_inline proc(def: Vertex_Buffer_Def) -> (handle: Vertex_Buffer_Handle, ok: bool) #optional_ok
 {
-    return handle_map.add(&vertex_buffers_gl, create_vertex_buffer_gl(def))
+    return handle_map.add(&vertex_buffer_map_gl, vertex_buffer_create_gl(def))
 }
 
-remove_vertex_buffer_gl :: #force_inline proc(handle: Vertex_Buffer_Handle)
+vertex_buffer_rem_gl :: #force_inline proc(handle: Vertex_Buffer_Handle)
 {
-    vb, ok := handle_map.get(&vertex_buffers_gl, handle)
+    vb, ok := handle_map.get(&vertex_buffer_map_gl, handle)
     assert(ok, "Error: Invalid vertex buffer.")
-    destroy_vertex_buffer_gl(vb)
-    handle_map.remove(&vertex_buffers_gl, handle)
+    vertex_buffer_destroy_gl(vb)
+    handle_map.remove(&vertex_buffer_map_gl, handle)
 }
 
-create_vertex_buffer_gl :: proc(def: Vertex_Buffer_Def) -> Vertex_Buffer_GL
+vertex_buffer_create_gl :: proc(def: Vertex_Buffer_Def) -> Vertex_Buffer_GL
 {
     vao, vbo, ebo: u32
 
@@ -220,9 +220,9 @@ create_vertex_buffer_gl :: proc(def: Vertex_Buffer_Def) -> Vertex_Buffer_GL
 
         gl.EnableVertexAttribArray(u32(i))
         if !data_type_is_integer(attr) {
-            gl.VertexAttribPointer(u32(i), i32(data_type_len(attr)), from_data_type_gl(attr), gl.FALSE, stride, uintptr(offset))
+            gl.VertexAttribPointer(u32(i), i32(data_type_len(attr)), data_type_to_gl(attr), gl.FALSE, stride, uintptr(offset))
         } else {
-            gl.VertexAttribIPointer(u32(i), i32(data_type_len(attr)), from_data_type_gl(attr), stride, uintptr(offset))
+            gl.VertexAttribIPointer(u32(i), i32(data_type_len(attr)), data_type_to_gl(attr), stride, uintptr(offset))
         }
         offset += data_type_size(attr)
     }
@@ -244,7 +244,7 @@ create_vertex_buffer_gl :: proc(def: Vertex_Buffer_Def) -> Vertex_Buffer_GL
     }
 }
 
-destroy_vertex_buffer_gl :: proc(vb: ^Vertex_Buffer_GL)
+vertex_buffer_destroy_gl :: proc(vb: ^Vertex_Buffer_GL)
 {
     assert(vb.vao != 0 && vb.vbo != 0 && vb.ebo != 0, "Error: Invalid vertex buffer.")
     gl.DeleteVertexArrays(1, &vb.vao)
@@ -253,9 +253,9 @@ destroy_vertex_buffer_gl :: proc(vb: ^Vertex_Buffer_GL)
     vb^ = {}
 }
 
-draw_vertex_buffer_gl :: proc(handle: Vertex_Buffer_Handle, count: i32 = 0, index_offset: u32 = 0)
+vertex_buffer_draw_gl :: proc(handle: Vertex_Buffer_Handle, count: i32 = 0, index_offset: u32 = 0)
 {
-    vb, ok := handle_map.get(&vertex_buffers_gl, handle)
+    vb, ok := handle_map.get(&vertex_buffer_map_gl, handle)
     assert(ok, "Error: Invalid vertex buffer.")
     gl.BindVertexArray(vb.vao)
     gl.DrawElements(gl.TRIANGLES, count == 0 ? vb.elem_count : count, gl.UNSIGNED_INT, rawptr(uintptr(index_offset * size_of(u32))))
@@ -271,29 +271,29 @@ Shader_GL :: struct
     program: u32,
 }
 
-add_shader_gl :: #force_inline proc(source: string) -> (handle: Shader_Handle, ok: bool) #optional_ok
+shader_add_gl :: #force_inline proc(def: Shader_Def) -> (handle: Shader_Handle, ok: bool) #optional_ok
 {
-    return handle_map.add(&shaders_gl, create_shader_gl(source))
+    return handle_map.add(&shader_map_gl, shader_create_gl(def))
 }
 
-remove_shader_gl :: #force_inline proc(handle: Shader_Handle)
+shader_rem_gl :: #force_inline proc(handle: Shader_Handle)
 {
-    shader, ok := handle_map.get(&shaders_gl, handle)
+    shader, ok := handle_map.get(&shader_map_gl, handle)
     assert(ok, "Error: Invalid shader.")
-    destroy_shader_gl(shader^)
-    handle_map.remove(&shaders_gl, handle)
+    shader_destroy_gl(shader)
+    handle_map.remove(&shader_map_gl, handle)
 }
 
-create_shader_gl :: proc(source: string) -> Shader_GL
+shader_create_gl :: proc(def: Shader_Def) -> Shader_GL
 {	
-    if len(source) == 0 
+    if len(def.source) == 0 
     {
 		log.error("Error: The shader source cannot be empty.")
 		return {}
 	}
 
 	VERT_PREFIX :: "#version 410 core \n#define VERTEX_SHADER \n"
-	vert := compile_shader_with_prefix_gl(source, VERT_PREFIX, gl.VERTEX_SHADER)
+	vert := shader_compile_with_prefix_gl(def.source, VERT_PREFIX, gl.VERTEX_SHADER)
 
 	if vert == 0 
     {
@@ -302,7 +302,7 @@ create_shader_gl :: proc(source: string) -> Shader_GL
 	}
 
 	FRAG_PREFIX :: "#version 410 core \n#define FRAGMENT_SHADER \n"
-	frag := compile_shader_with_prefix_gl(source, FRAG_PREFIX, gl.FRAGMENT_SHADER)
+	frag := shader_compile_with_prefix_gl(def.source, FRAG_PREFIX, gl.FRAGMENT_SHADER)
 
 	if frag == 0 
     {
@@ -337,20 +337,21 @@ create_shader_gl :: proc(source: string) -> Shader_GL
     }
 }
 
-destroy_shader_gl :: proc(shader: Shader_GL)
+shader_destroy_gl :: proc(shader: ^Shader_GL)
 {
     assert(shader.program != 0, "Error: Invalid shader.")
     gl.DeleteProgram(shader.program)
+    shader.program = 0
 }
 
-use_shader_gl :: proc(handle: Shader_Handle)
+shader_use_gl :: proc(handle: Shader_Handle)
 {
-    shader, ok := handle_map.get(&shaders_gl, handle)
+    shader, ok := handle_map.get(&shader_map_gl, handle)
     assert(ok && shader.program != 0, "Error: Invalid shader.")
     gl.UseProgram(shader.program)
 }
 
-compile_shader_with_prefix_gl :: proc(source: string, prefix: string, shader_type: u32) -> u32 
+shader_compile_with_prefix_gl :: proc(source: string, prefix: string, shader_type: u32) -> u32 
 {
 	shader := gl.CreateShader(shader_type)
 
@@ -406,8 +407,8 @@ else
 
 context_gl: sdl.GLContext
 window_gl: ^sdl.Window
-shaders_gl: handle_map.Static_Handle_Map(MAX_SHADERS, Shader_GL, Shader_Handle)
-vertex_buffers_gl: handle_map.Static_Handle_Map(MAX_VERTEX_BUFFERS, Vertex_Buffer_GL, Vertex_Buffer_Handle)
+shader_map_gl: handle_map.Static_Handle_Map(MAX_SHADERS, Shader_GL, Shader_Handle)
+vertex_buffer_map_gl: handle_map.Static_Handle_Map(MAX_VERTEX_BUFFERS, Vertex_Buffer_GL, Vertex_Buffer_Handle)
 
 } // when OPENGL
 

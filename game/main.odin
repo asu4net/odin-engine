@@ -78,7 +78,7 @@ main :: proc()
 	// @Region: GPU.
 	// ====================================================================
 
-    context_created := gpu.create_context(window)
+    context_created := gpu.context_create(window)
     if !context_created
     {
         log.error("Error: Failed to create the context")
@@ -89,7 +89,7 @@ main :: proc()
     {
         if context_created
         {
-            gpu.destroy_context()
+            gpu.context_destroy()
         }
     }
 
@@ -107,8 +107,8 @@ main :: proc()
 		+0.5, +0.5, 1.0, 1.0,
 		-0.5, +0.5, 0.0, 1.0,
 	}
-	
-	vb := gpu.add_vertex_buffer({
+
+	vb := gpu.add(gpu.Vertex_Buffer_Def{
 		data  = raw_data(QUAD_VERTS),
 		count = len(QUAD_VERTS),
 		vsize = size_of(f32) * 4,
@@ -122,7 +122,7 @@ main :: proc()
 		}
 	})
 	
-	shader := gpu.add_shader(#load("shader_sprite.glsl", string))
+	shader := gpu.add(gpu.Shader_Def{#load("shader_sprite.glsl", string)})
 
     // ====================================================================
 	// @Region: Main Loop
@@ -157,9 +157,9 @@ main :: proc()
 		}
 
 		gpu.clear_screen({1, 0, 0, 1})
-		gpu.use_shader(shader)
-		gpu.draw_vertex_buffer(vb)
-        gpu.swap_buffers()
+		gpu.use(shader)
+		gpu.draw(vb)
+        gpu.present()
 
 		// Clean: Temporary storage.
 		free_all(context.temp_allocator)

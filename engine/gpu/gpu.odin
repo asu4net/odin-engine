@@ -76,11 +76,11 @@ data_type_is_integer :: proc(type: Data_Type) -> bool
 // @Region: Context
 // ====================================================================
 
-create_context :: #force_inline proc(window: ^sdl.Window) -> bool
+context_create :: #force_inline proc(window: ^sdl.Window) -> bool
 {
     when OPENGL 
     {
-        return create_context_gl(window)
+        return context_create_gl(window)
     }
     else
     {
@@ -89,11 +89,11 @@ create_context :: #force_inline proc(window: ^sdl.Window) -> bool
     }
 }
 
-destroy_context :: #force_inline proc()
+context_destroy :: #force_inline proc()
 {
     when OPENGL 
     {
-        destroy_context_gl()
+        context_destroy_gl()
     }
     else
     {
@@ -102,7 +102,7 @@ destroy_context :: #force_inline proc()
     }
 }
 
-swap_buffers :: #force_inline proc()
+present :: #force_inline proc()
 {
     when OPENGL
     {
@@ -130,13 +130,18 @@ clear_screen :: #force_inline proc(color: [4]f32 = {0, 0, 0, 1})
 // @Region: Shader
 // ====================================================================
 
+Shader_Def :: struct
+{
+    source: string
+}
+
 Shader_Handle :: handle_map.Handle32
 
-add_shader :: #force_inline proc(source: string) -> (handle: Shader_Handle, ok: bool) #optional_ok
+shader_add :: #force_inline proc(def: Shader_Def) -> (handle: Shader_Handle, ok: bool) #optional_ok
 {
     when OPENGL
     {
-        return add_shader_gl(source)
+        return shader_add_gl(def)
     }
     else
     {
@@ -145,11 +150,11 @@ add_shader :: #force_inline proc(source: string) -> (handle: Shader_Handle, ok: 
     }
 }
 
-remove_shader :: #force_inline proc(handle: Shader_Handle)
+shader_rem :: #force_inline proc(handle: Shader_Handle)
 {
     when OPENGL
     {
-        remove_shader_gl(handle)
+        shader_rem_gl(handle)
     }
     else
     {
@@ -157,11 +162,11 @@ remove_shader :: #force_inline proc(handle: Shader_Handle)
     }
 }
 
-use_shader :: #force_inline proc(handle: Shader_Handle)
+shader_use :: #force_inline proc(handle: Shader_Handle)
 {
     when OPENGL
     {
-        use_shader_gl(handle)
+        shader_use_gl(handle)
     }
     else
     {
@@ -184,11 +189,11 @@ Vertex_Buffer_Def :: struct
 
 Vertex_Buffer_Handle :: handle_map.Handle32
 
-add_vertex_buffer :: #force_inline proc(def: Vertex_Buffer_Def) -> (handle: Vertex_Buffer_Handle, ok: bool) #optional_ok
+vertex_buffer_add :: #force_inline proc(def: Vertex_Buffer_Def) -> (handle: Vertex_Buffer_Handle, ok: bool) #optional_ok
 {
     when OPENGL
     {
-        return add_vertex_buffer_gl(def)
+        return vertex_buffer_add_gl(def)
     }
     else
     {
@@ -197,11 +202,11 @@ add_vertex_buffer :: #force_inline proc(def: Vertex_Buffer_Def) -> (handle: Vert
     }
 }
 
-remove_vertex_buffer :: #force_inline proc(handle: Vertex_Buffer_Handle)
+vertex_buffer_rem :: #force_inline proc(handle: Vertex_Buffer_Handle)
 {
     when OPENGL
     {
-        remove_vertex_buffer_gl(handle)
+        vertex_buffer_rem_gl(handle)
     }
     else
     {
@@ -210,17 +215,34 @@ remove_vertex_buffer :: #force_inline proc(handle: Vertex_Buffer_Handle)
     }
 }
 
-draw_vertex_buffer :: #force_inline proc(handle: Vertex_Buffer_Handle, count: i32 = 0, index_offset: u32 = 0)
+vertex_buffer_draw :: #force_inline proc(handle: Vertex_Buffer_Handle, count: i32 = 0, index_offset: u32 = 0)
 {
     when OPENGL
     {
-        draw_vertex_buffer_gl(handle, count, index_offset)
+        vertex_buffer_draw_gl(handle, count, index_offset)
     }
     else
     {
         #assert(false, "Error! Missing implementation.")
         return {}
     }
+}
+
+// ====================================================================
+// @Region: Overloads
+// ====================================================================
+
+add :: proc {
+    shader_add,
+    vertex_buffer_add,
+}
+
+use :: proc {
+    shader_use,
+}
+
+draw :: proc {
+    vertex_buffer_draw,
 }
 
 // ===================================================
