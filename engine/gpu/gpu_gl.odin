@@ -276,11 +276,16 @@ shader_add_gl :: #force_inline proc(def: Shader_Def) -> (handle: Shader_Handle, 
     return handle_map.add(&shader_map_gl, shader_create_gl(def))
 }
 
-shader_rem_gl :: #force_inline proc(handle: Shader_Handle)
+shader_get_gl :: #force_inline proc(handle: Shader_Handle) -> ^Shader_GL
 {
     shader, ok := handle_map.get(&shader_map_gl, handle)
     assert(ok, "Error: Invalid shader.")
-    shader_destroy_gl(shader)
+    return shader
+} 
+
+shader_rem_gl :: #force_inline proc(handle: Shader_Handle)
+{
+    _ = shader_get_gl(handle)
     handle_map.remove(&shader_map_gl, handle)
 }
 
@@ -346,9 +351,67 @@ shader_destroy_gl :: proc(shader: ^Shader_GL)
 
 shader_use_gl :: proc(handle: Shader_Handle)
 {
-    shader, ok := handle_map.get(&shader_map_gl, handle)
-    assert(ok && shader.program != 0, "Error: Invalid shader.")
+    shader := shader_get_gl(handle)
+    assert(shader.program != 0, "Error: Invalid shader.")
     gl.UseProgram(shader.program)
+}
+
+shader_get_param_location_gl :: #force_inline proc(shader: Shader_GL, name: string) -> i32 
+{
+    return gl.GetUniformLocation(shader.program, cstring(raw_data(name)))
+}
+
+shader_set_param_float_gl :: proc(handle: Shader_Handle, name: string, value: f32) 
+{
+    shader := shader_get_gl(handle)
+    location := shader_get_param_location_gl(shader^, name)
+    gl.Uniform1f(location, value)
+}
+
+shader_set_param_vec2_gl :: proc(handle: Shader_Handle, name: string, value: [2] f32) 
+{
+    shader := shader_get_gl(handle)
+    location := shader_get_param_location_gl(shader^, name)
+    value := value
+    gl.Uniform2fv(location, 1, raw_data(value[:]))
+}
+
+shader_set_param_vec3_gl :: proc(handle: Shader_Handle, name: string, value: [3] f32) 
+{
+    shader := shader_get_gl(handle)
+    location := shader_get_param_location_gl(shader^, name)
+    value := value
+    gl.Uniform3fv(location, 1, raw_data(value[:]))
+}
+
+shader_set_param_vec4_gl :: proc(handle: Shader_Handle, name: string, value: [4] f32) 
+{
+    shader := shader_get_gl(handle)
+    location := shader_get_param_location_gl(shader^, name)
+    value := value
+    gl.Uniform4fv(location, 1, raw_data(value[:]))
+}
+
+shader_set_param_m4_gl :: proc(handle: Shader_Handle, name: string, value: matrix[4, 4] f32) 
+{
+    shader := shader_get_gl(handle)
+    location := shader_get_param_location_gl(shader^, name)
+    arg := value
+    gl.UniformMatrix4fv(location, 1, transpose = false, value = raw_data(&arg))
+}
+
+shader_set_param_int_gl :: proc(handle: Shader_Handle, name: string, value: i32) 
+{
+    shader := shader_get_gl(handle)
+    location := shader_get_param_location_gl(shader^, name)
+    gl.Uniform1i(location, value)
+}
+
+shader_set_param_int_array_gl :: proc(handle: Shader_Handle, name: string, value: [^]i32, count: i32) 
+{
+    shader := shader_get_gl(handle)
+    location := shader_get_param_location_gl(shader^, name)
+    gl.Uniform1iv(location, count, value)
 }
 
 shader_compile_with_prefix_gl :: proc(source: string, prefix: string, shader_type: u32) -> u32 

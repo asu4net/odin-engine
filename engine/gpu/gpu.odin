@@ -174,6 +174,90 @@ shader_use :: #force_inline proc(handle: Shader_Handle)
     }
 }
 
+shader_set_param_float :: #force_inline proc(handle: Shader_Handle, name: string, value: f32) 
+{
+    when OPENGL
+    {
+        shader_set_param_float_gl(handle, name, value)
+    }
+    else
+    {
+        #assert(false, "Error! Missing implementation.")
+    }
+}
+
+shader_set_param_vec2 :: #force_inline proc(handle: Shader_Handle, name: string, value: [2] f32) 
+{
+    when OPENGL
+    {
+        shader_set_param_vec2_gl(handle, name, value)
+    }
+    else
+    {
+        #assert(false, "Error! Missing implementation.")
+    }
+}
+
+shader_set_param_vec3 :: #force_inline proc(handle: Shader_Handle, name: string, value: [3] f32) 
+{
+    when OPENGL
+    {
+        shader_set_param_vec3_gl(handle, name, value)
+    }
+    else
+    {
+        #assert(false, "Error! Missing implementation.")
+    }
+}
+
+shader_set_param_vec4 :: #force_inline proc(handle: Shader_Handle, name: string, value: [4] f32) 
+{
+    when OPENGL
+    {
+        shader_set_param_vec4_gl(handle, name, value)
+    }
+    else
+    {
+        #assert(false, "Error! Missing implementation.")
+    }
+}
+
+shader_set_param_m4 :: #force_inline proc(handle: Shader_Handle, name: string, value: matrix[4, 4] f32) 
+{
+    when OPENGL
+    {
+        shader_set_param_m4_gl(handle, name, value)
+    }
+    else
+    {
+        #assert(false, "Error! Missing implementation.")
+    }
+}
+
+shader_set_param_int :: #force_inline proc(handle: Shader_Handle, name: string, value: i32) 
+{
+    when OPENGL
+    {
+        shader_set_param_int_gl(handle, name, value)
+    }
+    else
+    {
+        #assert(false, "Error! Missing implementation.")
+    }
+}
+
+shader_set_param_int_array :: #force_inline proc(handle: Shader_Handle, name: string, value: [^]i32, count: i32) 
+{
+    when OPENGL
+    {
+        shader_set_param_int_array_gl(handle, name, value, count)
+    }
+    else
+    {
+        #assert(false, "Error! Missing implementation.")
+    }
+}
+
 // ====================================================================
 // @Region: Vertex Buffer
 // ====================================================================
@@ -239,6 +323,16 @@ add :: proc {
 
 use :: proc {
     shader_use,
+}
+
+set_param :: proc {
+    shader_set_param_float,
+    shader_set_param_vec2,
+    shader_set_param_vec3,
+    shader_set_param_vec4,
+    shader_set_param_m4,
+    shader_set_param_int,
+    shader_set_param_int_array,
 }
 
 draw :: proc {
