@@ -100,6 +100,30 @@ main :: proc()
 	start_tick := time.tick_now()
 	last_time := time.duration_seconds(time.tick_since(start_tick))
 	
+	// Test
+	QUAD_VERTS :: []f32{
+		-0.5, -0.5, 0.0, 0.0, 
+		+0.5, -0.5, 1.0, 0.0,
+		+0.5, +0.5, 1.0, 1.0,
+		-0.5, +0.5, 0.0, 1.0,
+	}
+	
+	vb := gpu.add_vertex_buffer({
+		data  = raw_data(QUAD_VERTS),
+		len   = len(QUAD_VERTS),
+		vsize = size_of(f32) * 4,
+		attrs = {
+			.Float2,
+			.Float2,
+		},
+		elems = {
+			0, 1, 2, // Triangle 1
+			2, 3, 0, // Triangle 2
+		}
+	})
+	
+	shader := gpu.add_shader(#load("shader_sprite.glsl", string))
+
     // ====================================================================
 	// @Region: Main Loop
     // ====================================================================
@@ -133,6 +157,8 @@ main :: proc()
 		}
 
 		gpu.clear_screen({1, 0, 0, 1})
+		gpu.use_shader(shader)
+		gpu.draw_vertex_buffer(vb)
         gpu.swap_buffers()
 
 		// Clean: Temporary storage.

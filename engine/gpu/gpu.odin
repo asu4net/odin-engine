@@ -132,6 +132,43 @@ clear_screen :: #force_inline proc(color: [4]f32 = {0, 0, 0, 1})
 
 Shader_Handle :: handle_map.Handle32
 
+add_shader :: #force_inline proc(source: string) -> (handle: Shader_Handle, ok: bool) #optional_ok
+{
+    when OPENGL
+    {
+        return add_shader_gl(source)
+    }
+    else
+    {
+        #assert(false, "Error! Missing implementation.")
+        return {}
+    }
+}
+
+remove_shader :: #force_inline proc(handle: Shader_Handle)
+{
+    when OPENGL
+    {
+        remove_shader_gl(handle)
+    }
+    else
+    {
+        #assert(false, "Error! Missing implementation.")
+    }
+}
+
+use_shader :: #force_inline proc(handle: Shader_Handle)
+{
+    when OPENGL
+    {
+        use_shader_gl(handle)
+    }
+    else
+    {
+        #assert(false, "Error! Missing implementation.")
+    }
+}
+
 // ====================================================================
 // @Region: Vertex Buffer
 // ====================================================================
@@ -165,6 +202,19 @@ remove_vertex_buffer :: #force_inline proc(handle: Vertex_Buffer_Handle)
     when OPENGL
     {
         remove_vertex_buffer_gl(handle)
+    }
+    else
+    {
+        #assert(false, "Error! Missing implementation.")
+        return {}
+    }
+}
+
+draw_vertex_buffer :: #force_inline proc(handle: Vertex_Buffer_Handle, count: i32 = 0, index_offset: u32 = 0)
+{
+    when OPENGL
+    {
+        draw_vertex_buffer_gl(handle, count, index_offset)
     }
     else
     {

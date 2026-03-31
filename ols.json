@@ -16,7 +16,8 @@
                 "./game" 
             ], 
             "defines": { 
-                "ODIN_DEBUG": "true"
+                "ODIN_DEBUG": "true",
+				"OPENGL": "true"
             }
         }
 	]
