@@ -292,7 +292,7 @@ create_shader_gl :: proc(source: string) -> Shader_GL
 		return {}
 	}
 
-	VERT_PREFIX :: "#version 460 core \n#define VERTEX_SHADER \n"
+	VERT_PREFIX :: "#version 410 core \n#define VERTEX_SHADER \n"
 	vert := compile_shader_with_prefix_gl(source, VERT_PREFIX, gl.VERTEX_SHADER)
 
 	if vert == 0 
@@ -301,7 +301,7 @@ create_shader_gl :: proc(source: string) -> Shader_GL
 		return {}
 	}
 
-	FRAG_PREFIX :: "#version 460 core \n#define FRAGMENT_SHADER \n"
+	FRAG_PREFIX :: "#version 410 core \n#define FRAGMENT_SHADER \n"
 	frag := compile_shader_with_prefix_gl(source, FRAG_PREFIX, gl.FRAGMENT_SHADER)
 
 	if frag == 0 
