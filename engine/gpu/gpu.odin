@@ -316,11 +316,6 @@ vertex_buffer_draw :: #force_inline proc(handle: Vertex_Buffer_Handle, count: i3
 // @Region: Overloads
 // ====================================================================
 
-add :: proc {
-    shader_add,
-    vertex_buffer_add,
-}
-
 use :: proc {
     shader_use,
 }

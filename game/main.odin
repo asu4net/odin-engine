@@ -108,7 +108,7 @@ main :: proc()
 		-0.5, +0.5, 0.0, 1.0,
 	}
 
-	vb := gpu.add(gpu.Vertex_Buffer_Def{
+	vb := gpu.vertex_buffer_add({
 		data  = raw_data(QUAD_VERTS),
 		count = len(QUAD_VERTS),
 		vsize = size_of(f32) * 4,
@@ -122,7 +122,7 @@ main :: proc()
 		}
 	})
 	
-	shader := gpu.add(gpu.Shader_Def{#load("shader_sprite.glsl", string)})
+	shader := gpu.shader_add({#load("shader_sprite.glsl", string)})
 
     // ====================================================================
 	// @Region: Main Loop
