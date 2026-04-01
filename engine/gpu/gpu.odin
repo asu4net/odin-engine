@@ -111,7 +111,7 @@ clear_screen :: #force_inline proc(color: [4]f32 = {0, 0, 0, 1})
 // ====================================================================
 
 Shader_Def :: struct {
-    source: string
+    source: string,
 }
 
 Shader_Handle :: handle_map.Handle32
@@ -136,6 +136,14 @@ shader_rem :: #force_inline proc(handle: Shader_Handle) {
 shader_use :: #force_inline proc(handle: Shader_Handle) {
     when OPENGL {
         shader_use_gl(handle)
+    } else {
+        #assert(false, "Error! Missing implementation.")
+    }
+}
+
+shader_set_global_buffer_binding :: #force_inline proc(handle: Shader_Handle, name: string, binding: u32) {
+    when OPENGL {
+        shader_set_global_buffer_binding_gl(handle, name, binding)
     } else {
         #assert(false, "Error! Missing implementation.")
     }
@@ -278,6 +286,15 @@ global_buffer_rem :: #force_inline proc(handle: Global_Buffer_Handle) {
 global_buffer_set_data :: #force_inline proc(handle: Global_Buffer_Handle, size: i32, data: rawptr) {
     when OPENGL {
         global_buffer_set_data_gl(handle, size, data)
+    } else {
+        #assert(false, "Error! Missing implementation.")
+        return {}
+    }
+}
+
+global_buffer_use :: #force_inline proc(handle: Global_Buffer_Handle, binding: u32) {
+    when OPENGL {
+        global_buffer_use_gl(handle, binding)
     } else {
         #assert(false, "Error! Missing implementation.")
         return {}

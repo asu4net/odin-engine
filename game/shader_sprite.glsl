@@ -3,8 +3,14 @@
 layout(location = 0) in vec2 a_pos;
 layout(location = 1) in vec2 a_uv;
 
+layout(std140) uniform Global_Buffer {
+  mat4 u_projection;
+  mat4 u_view;
+  mat4 u_projection_view;
+};
+
 void main() {
-    gl_Position = vec4(a_pos.x, a_pos.y, 0.0, 1.0);
+    gl_Position = u_projection_view * vec4(a_pos.x, a_pos.y, 0.0, 1.0);
 }
 #endif
 

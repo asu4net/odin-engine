@@ -354,6 +354,12 @@ shader_use_gl :: proc(handle: Shader_Handle) {
     gl.UseProgram(shader.program)
 }
 
+shader_set_global_buffer_binding_gl :: #force_inline proc(handle: Shader_Handle, name: string, binding: u32) {
+    shader := shader_get_gl(handle)
+    index := gl.GetUniformBlockIndex(shader.program, strings.clone_to_cstring(name, context.temp_allocator))
+    gl.UniformBlockBinding(shader.program, index, binding)
+}
+
 shader_get_param_location_gl :: #force_inline proc(shader: Shader_GL, name: string) -> i32 {
     return gl.GetUniformLocation(shader.program, cstring(raw_data(name)))
 }
@@ -442,7 +448,8 @@ shader_compile_with_prefix_gl :: proc(source: string, prefix: string, shader_typ
 Global_Buffer_GL :: struct {
     handle: Global_Buffer_Handle,
     ubo: u32,
-    size: int, 
+    size: int,
+    location: i32,
 }
 
 global_buffer_add_gl :: #force_inline proc(def: Global_Buffer_Def) -> (handle: Global_Buffer_Handle, ok: bool) #optional_ok {
@@ -465,7 +472,13 @@ global_buffer_rem_gl :: #force_inline proc(handle: Global_Buffer_Handle) {
 global_buffer_set_data_gl :: proc(handle: Global_Buffer_Handle, size: i32, data: rawptr) {
     gb := global_buffer_get_gl(handle)
     gl.BindBuffer(gl.UNIFORM_BUFFER, gb.ubo)
-    gl.BufferData(gl.UNIFORM_BUFFER, int(size), data, gl.DYNAMIC_DRAW)
+    gl.BufferSubData(gl.UNIFORM_BUFFER, offset = 0, size = int(size), data = data)
+    gl.BindBuffer(gl.UNIFORM_BUFFER, 0)
+}
+
+global_buffer_use_gl :: proc(handle: Global_Buffer_Handle, binding: u32) {
+    gb := global_buffer_get_gl(handle)
+    gl.BindBufferBase(gl.UNIFORM_BUFFER, index = binding, buffer = gb.ubo)
     gl.BindBuffer(gl.UNIFORM_BUFFER, 0)
 }
 
@@ -474,7 +487,6 @@ global_buffer_create_gl :: proc(def: Global_Buffer_Def) -> Global_Buffer_GL {
     gl.GenBuffers(1, &ubo)
     gl.BindBuffer(gl.UNIFORM_BUFFER, ubo)
     gl.BufferData(gl.UNIFORM_BUFFER, def.size, nil, gl.DYNAMIC_DRAW)
-    gl.BindBuffer(gl.UNIFORM_BUFFER, 0)
     return { 
         ubo = ubo 
     }
