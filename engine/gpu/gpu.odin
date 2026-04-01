@@ -285,25 +285,38 @@ global_buffer_set_data :: #force_inline proc(handle: Global_Buffer_Handle, size:
 }
 
 // ====================================================================
-// @Region: Overloads
+// @Region: Texture
 // ====================================================================
 
-use :: proc {
-    shader_use,
+Texture_Handle :: handle_map.Handle32
+
+Texture_Def :: struct {
+
 }
 
-set_param :: proc {
-    shader_set_param_float,
-    shader_set_param_vec2,
-    shader_set_param_vec3,
-    shader_set_param_vec4,
-    shader_set_param_m4,
-    shader_set_param_int,
-    shader_set_param_int_array,
+texture_add :: #force_inline proc(def: Texture_Def) -> (handle: Texture_Handle, ok: bool) #optional_ok {
+    when OPENGL {
+        return texture_add_gl(def)
+    } else {
+        #assert(false, "Error! Missing implementation.")
+        return {}
+    }
 }
 
-draw :: proc {
-    vertex_buffer_draw,
+texture_rem :: #force_inline proc(handle: Texture_Handle) {
+    when OPENGL {
+        texture_rem_gl(handle)
+    } else {
+        #assert(false, "Error! Missing implementation.")
+    }
+}
+
+texture_use :: #force_inline proc(handle: Texture_Handle) {
+    when OPENGL {
+        texture_use_gl(handle)
+    } else {
+        #assert(false, "Error! Missing implementation.")
+    }
 }
 
 // ====================================================================
@@ -315,6 +328,7 @@ OPENGL             :: true
 MAX_SHADERS        :: 100
 MAX_VERTEX_BUFFERS :: 100
 MAX_GLOBAL_BUFFERS :: 100
+MAX_TEXTURES       :: 100
 
 // ====================================================================
 // @Imports:

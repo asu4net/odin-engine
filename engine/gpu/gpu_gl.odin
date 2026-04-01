@@ -1,3 +1,5 @@
+#+private
+
 package gpu
 
 when OPENGL {
@@ -103,6 +105,12 @@ context_destroy_gl :: proc() {
             global_buffer_destroy_gl(&global_buffer_map_gl.items[i])
         }
         handle_map.clear(&global_buffer_map_gl)
+
+        // Clean the textures.
+        for i in 1..<texture_map_gl.used_len {
+            texture_destroy_gl(&texture_map_gl.items[i])
+        }
+        handle_map.clear(&texture_map_gl)
 
         log.info("GL SDL Context finish.")
         if !sdl.GL_DestroyContext(context_gl) {
@@ -478,6 +486,44 @@ global_buffer_destroy_gl :: proc(gb: ^Global_Buffer_GL) {
 }
 
 // ====================================================================
+// @Region: Texture
+// ====================================================================
+
+Texture_GL :: struct {
+    handle: Texture_Handle,
+    tex: u32,
+}
+
+texture_add_gl :: #force_inline proc(def: Texture_Def) -> (handle: Texture_Handle, ok: bool) #optional_ok {
+    return handle_map.add(&texture_map_gl, texture_create_gl(def))
+}
+
+texture_get_gl :: #force_inline proc(handle: Texture_Handle) -> ^Texture_GL {
+    texture, ok := handle_map.get(&texture_map_gl, handle)
+    assert(ok, "Error: Texture not found")
+    assert(texture.tex != 0, "Error: Invalid texture.")
+    return texture
+} 
+
+texture_rem_gl :: #force_inline proc(handle: Texture_Handle) {
+    texture := texture_get_gl(handle)
+    texture_destroy_gl(texture)
+    handle_map.remove(&texture_map_gl, handle)
+}
+
+texture_create_gl :: proc(def: Texture_Def) -> Texture_GL {
+    return {}
+}
+
+texture_destroy_gl :: proc(texture: ^Texture_GL) {
+    texture^ = {}
+}
+
+texture_use_gl :: proc(handle: Texture_Handle) {
+    texture := texture_get_gl(handle)
+}
+
+// ====================================================================
 // @Constants:
 // ====================================================================
 
@@ -500,6 +546,7 @@ window_gl: ^sdl.Window
 shader_map_gl: handle_map.Static_Handle_Map(MAX_SHADERS, Shader_GL, Shader_Handle)
 vertex_buffer_map_gl: handle_map.Static_Handle_Map(MAX_VERTEX_BUFFERS, Vertex_Buffer_GL, Vertex_Buffer_Handle)
 global_buffer_map_gl: handle_map.Static_Handle_Map(MAX_GLOBAL_BUFFERS, Global_Buffer_GL, Global_Buffer_Handle)
+texture_map_gl: handle_map.Static_Handle_Map(MAX_TEXTURES, Texture_GL, Texture_Handle)
 
 } // when OPENGL
 

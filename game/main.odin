@@ -138,9 +138,10 @@ main :: proc() {
 		}
 
 		gpu.clear_screen({1, 0, 0, 1})
-		gpu.use(shader)
-		gpu.set_param(shader, "u_color", [4]f32{0, 0, 1, 0})
-		gpu.draw(vb)
+		gpu.shader_use(shader)
+		gpu.shader_set_param_vec4(shader, "u_color", [4]f32{0, 0, 1, 0})
+		gpu.vertex_buffer_draw(vb)
+
         gpu.present()
 
 		// Clean: Temporary storage.
