@@ -85,14 +85,25 @@ context_create_gl :: proc(window: ^sdl.Window) -> bool {
 
 context_destroy_gl :: proc() {
     if context_gl != nil {
+
+        // Clean the shaders.
         for i in 1..<shader_map_gl.used_len {
             shader_destroy_gl(&shader_map_gl.items[i])
         }
         handle_map.clear(&shader_map_gl)
+
+        // Clean the vertex buffers.
         for i in 1..<vertex_buffer_map_gl.used_len {
             vertex_buffer_destroy_gl(&vertex_buffer_map_gl.items[i])
         }
         handle_map.clear(&vertex_buffer_map_gl)
+
+        // Clean the global buffers.
+        for i in 1..<global_buffer_map_gl.used_len {
+            global_buffer_destroy_gl(&global_buffer_map_gl.items[i])
+        }
+        handle_map.clear(&global_buffer_map_gl)
+
         log.info("GL SDL Context finish.")
         if !sdl.GL_DestroyContext(context_gl) {
 		    log.errorf("Error: sdl.DestroyContext: %v\n", sdl.GetError())
@@ -173,9 +184,15 @@ vertex_buffer_add_gl :: #force_inline proc(def: Vertex_Buffer_Def) -> (handle: V
     return handle_map.add(&vertex_buffer_map_gl, vertex_buffer_create_gl(def))
 }
 
-vertex_buffer_rem_gl :: #force_inline proc(handle: Vertex_Buffer_Handle) {
+vertex_buffer_get_gl :: proc(handle: Vertex_Buffer_Handle) -> ^Vertex_Buffer_GL {
     vb, ok := handle_map.get(&vertex_buffer_map_gl, handle)
-    assert(ok, "Error: Invalid vertex buffer.")
+    assert(ok, "Error: Vertex Buffer not found")
+    assert(vb.vao != 0 && vb.vbo != 0 && vb.ebo != 0, "Error: Invalid vertex buffer.")
+    return vb
+}
+
+vertex_buffer_rem_gl :: #force_inline proc(handle: Vertex_Buffer_Handle) {
+    vb := vertex_buffer_get_gl(handle)
     vertex_buffer_destroy_gl(vb)
     handle_map.remove(&vertex_buffer_map_gl, handle)
 }
@@ -225,7 +242,6 @@ vertex_buffer_create_gl :: proc(def: Vertex_Buffer_Def) -> Vertex_Buffer_GL {
 }
 
 vertex_buffer_destroy_gl :: proc(vb: ^Vertex_Buffer_GL) {
-    assert(vb.vao != 0 && vb.vbo != 0 && vb.ebo != 0, "Error: Invalid vertex buffer.")
     gl.DeleteVertexArrays(1, &vb.vao)
     gl.DeleteBuffers(1, &vb.vbo)
     gl.DeleteBuffers(1, &vb.ebo)
@@ -233,10 +249,17 @@ vertex_buffer_destroy_gl :: proc(vb: ^Vertex_Buffer_GL) {
 }
 
 vertex_buffer_draw_gl :: proc(handle: Vertex_Buffer_Handle, count: i32 = 0, index_offset: u32 = 0) {
-    vb, ok := handle_map.get(&vertex_buffer_map_gl, handle)
-    assert(ok, "Error: Invalid vertex buffer.")
+    vb := vertex_buffer_get_gl(handle)
     gl.BindVertexArray(vb.vao)
     gl.DrawElements(gl.TRIANGLES, count == 0 ? vb.elem_count : count, gl.UNSIGNED_INT, rawptr(uintptr(index_offset * size_of(u32))))
+    gl.BindVertexArray(0)
+}
+
+vertex_buffer_set_data_gl :: #force_inline proc(handle: Vertex_Buffer_Handle, size: i32, data: rawptr) {
+    vb := vertex_buffer_get_gl(handle)
+    gl.BindBuffer(gl.ARRAY_BUFFER, vb.vbo)
+    gl.BufferSubData(gl.ARRAY_BUFFER, 0, int(size), data)
+    gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 }
 
 // ====================================================================
@@ -254,12 +277,14 @@ shader_add_gl :: #force_inline proc(def: Shader_Def) -> (handle: Shader_Handle, 
 
 shader_get_gl :: #force_inline proc(handle: Shader_Handle) -> ^Shader_GL {
     shader, ok := handle_map.get(&shader_map_gl, handle)
-    assert(ok, "Error: Invalid shader.")
+    assert(ok, "Error: Shader not found")
+    assert(shader.program != 0, "Error: Invalid shader.")
     return shader
 } 
 
 shader_rem_gl :: #force_inline proc(handle: Shader_Handle) {
-    _ = shader_get_gl(handle)
+    shader := shader_get_gl(handle)
+    shader_destroy_gl(shader)
     handle_map.remove(&shader_map_gl, handle)
 }
 
@@ -312,14 +337,12 @@ shader_create_gl :: proc(def: Shader_Def) -> Shader_GL {
 }
 
 shader_destroy_gl :: proc(shader: ^Shader_GL) {
-    assert(shader.program != 0, "Error: Invalid shader.")
     gl.DeleteProgram(shader.program)
-    shader.program = 0
+    shader^ = {}
 }
 
 shader_use_gl :: proc(handle: Shader_Handle) {
     shader := shader_get_gl(handle)
-    assert(shader.program != 0, "Error: Invalid shader.")
     gl.UseProgram(shader.program)
 }
 
@@ -405,6 +428,56 @@ shader_compile_with_prefix_gl :: proc(source: string, prefix: string, shader_typ
 }
 
 // ====================================================================
+// @Region: Global Buffer
+// ====================================================================
+
+Global_Buffer_GL :: struct {
+    handle: Global_Buffer_Handle,
+    ubo: u32,
+    size: int, 
+}
+
+global_buffer_add_gl :: #force_inline proc(def: Global_Buffer_Def) -> (handle: Global_Buffer_Handle, ok: bool) #optional_ok {
+    return handle_map.add(&global_buffer_map_gl, global_buffer_create_gl(def))
+}
+
+global_buffer_get_gl :: #force_inline proc(handle: Global_Buffer_Handle) -> ^Global_Buffer_GL {
+    gb, ok := handle_map.get(&global_buffer_map_gl, handle)
+    assert(ok, "Error: Global buffer not found.")
+    assert(gb.ubo != 0, "Error: Invalid global buffer.")
+    return gb
+}
+
+global_buffer_rem_gl :: #force_inline proc(handle: Global_Buffer_Handle) {
+    gb := global_buffer_get_gl(handle)
+    global_buffer_destroy_gl(gb)
+    handle_map.remove(&global_buffer_map_gl, handle)
+}
+
+global_buffer_set_data_gl :: proc(handle: Global_Buffer_Handle, size: i32, data: rawptr) {
+    gb := global_buffer_get_gl(handle)
+    gl.BindBuffer(gl.UNIFORM_BUFFER, gb.ubo)
+    gl.BufferData(gl.UNIFORM_BUFFER, int(size), data, gl.DYNAMIC_DRAW)
+    gl.BindBuffer(gl.UNIFORM_BUFFER, 0)
+}
+
+global_buffer_create_gl :: proc(def: Global_Buffer_Def) -> Global_Buffer_GL {
+    ubo: u32
+    gl.GenBuffers(1, &ubo)
+    gl.BindBuffer(gl.UNIFORM_BUFFER, ubo)
+    gl.BufferData(gl.UNIFORM_BUFFER, def.size, nil, gl.DYNAMIC_DRAW)
+    gl.BindBuffer(gl.UNIFORM_BUFFER, 0)
+    return { 
+        ubo = ubo 
+    }
+}
+
+global_buffer_destroy_gl :: proc(gb: ^Global_Buffer_GL) {
+    gl.DeleteBuffers(1, &gb.ubo)
+    gb^ = {}
+}
+
+// ====================================================================
 // @Constants:
 // ====================================================================
 
@@ -426,6 +499,7 @@ context_gl: sdl.GLContext
 window_gl: ^sdl.Window
 shader_map_gl: handle_map.Static_Handle_Map(MAX_SHADERS, Shader_GL, Shader_Handle)
 vertex_buffer_map_gl: handle_map.Static_Handle_Map(MAX_VERTEX_BUFFERS, Vertex_Buffer_GL, Vertex_Buffer_Handle)
+global_buffer_map_gl: handle_map.Static_Handle_Map(MAX_GLOBAL_BUFFERS, Global_Buffer_GL, Global_Buffer_Handle)
 
 } // when OPENGL
 

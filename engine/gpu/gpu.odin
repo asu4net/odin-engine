@@ -238,6 +238,52 @@ vertex_buffer_draw :: #force_inline proc(handle: Vertex_Buffer_Handle, count: i3
     }
 }
 
+vertex_buffer_set_data :: #force_inline proc(handle: Vertex_Buffer_Handle, size: i32, data: rawptr) {
+    when OPENGL {
+        vertex_buffer_set_data_gl(handle, size, data)
+    } else {
+        #assert(false, "Error! Missing implementation.")
+        return {}
+    }
+}
+
+// ====================================================================
+// @Region: Global Buffer
+// ====================================================================
+
+Global_Buffer_Def :: struct {
+    size: int, 
+}
+
+Global_Buffer_Handle :: handle_map.Handle32
+
+global_buffer_add :: #force_inline proc(def: Global_Buffer_Def) -> (handle: Global_Buffer_Handle, ok: bool) #optional_ok {
+    when OPENGL {
+        return global_buffer_add_gl(def)
+    } else {
+        #assert(false, "Error! Missing implementation.")
+        return {}
+    }
+}
+
+global_buffer_rem :: #force_inline proc(handle: Global_Buffer_Handle) {
+    when OPENGL {
+        global_buffer_rem_gl(handle)
+    } else {
+        #assert(false, "Error! Missing implementation.")
+        return {}
+    }
+}
+
+global_buffer_set_data :: #force_inline proc(handle: Global_Buffer_Handle, size: i32, data: rawptr) {
+    when OPENGL {
+        global_buffer_set_data_gl(handle, size, data)
+    } else {
+        #assert(false, "Error! Missing implementation.")
+        return {}
+    }
+}
+
 // ====================================================================
 // @Region: Overloads
 // ====================================================================
@@ -260,18 +306,19 @@ draw :: proc {
     vertex_buffer_draw,
 }
 
-// ===================================================
+// ====================================================================
 // @Constants:
-// ===================================================
+// ====================================================================
 
 // @Robustness: For now we force OpenGL implemetation.
 OPENGL             :: true
 MAX_SHADERS        :: 100
 MAX_VERTEX_BUFFERS :: 100
+MAX_GLOBAL_BUFFERS :: 100
 
-// ===================================================
+// ====================================================================
 // @Imports:
-// ===================================================
+// ====================================================================
 
 import "core:container/handle_map"
 import sdl "vendor:sdl3"
