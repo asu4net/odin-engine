@@ -51,8 +51,7 @@ data_type_size :: proc(type: Data_Type) -> int {
     return 0
 }
 
-data_type_is_integer :: proc(type: Data_Type) -> bool 
-{
+data_type_is_integer :: proc(type: Data_Type) -> bool {
     switch type {
         case .Int, .Sampler2D, .Int2, .Int3, .Int4, .Bool, .None: {
             return true
@@ -68,8 +67,7 @@ data_type_is_integer :: proc(type: Data_Type) -> bool
 // @Region: Context
 // ====================================================================
 
-context_create :: #force_inline proc(window: ^sdl.Window) -> bool
-{
+context_create :: #force_inline proc(window: ^sdl.Window) -> bool {
     when OPENGL {
         return context_create_gl(window)
     } else {
@@ -78,8 +76,7 @@ context_create :: #force_inline proc(window: ^sdl.Window) -> bool
     }
 }
 
-context_destroy :: #force_inline proc()
-{
+context_destroy :: #force_inline proc() {
     when OPENGL {
         context_destroy_gl()
     } else {
@@ -88,8 +85,7 @@ context_destroy :: #force_inline proc()
     }
 }
 
-present :: #force_inline proc()
-{
+present :: #force_inline proc() {
     when OPENGL {
         swap_buffers_gl()
     } else {
@@ -97,8 +93,7 @@ present :: #force_inline proc()
     }
 }
 
-clear_screen :: #force_inline proc(color: [4]f32 = {0, 0, 0, 1}) 
-{
+clear_screen :: #force_inline proc(color: [4]f32 = {0, 0, 0, 1}) {
     when OPENGL {
         clear_screen_gl(color)
     } else {
@@ -307,8 +302,18 @@ global_buffer_use :: #force_inline proc(handle: Global_Buffer_Handle, binding: u
 
 Texture_Handle :: handle_map.Handle32
 
-Texture_Def :: struct {
+Texture_Filter :: enum {
+    Nearest,
+    Linear,
+}
 
+Texture_Def :: struct {
+    filename: string,
+    pixels: [] byte,
+    width: int,
+    height: int,
+    channels: int,
+    filter: Texture_Filter,
 }
 
 texture_add :: #force_inline proc(def: Texture_Def) -> (handle: Texture_Handle, ok: bool) #optional_ok {
@@ -328,9 +333,9 @@ texture_rem :: #force_inline proc(handle: Texture_Handle) {
     }
 }
 
-texture_use :: #force_inline proc(handle: Texture_Handle) {
+texture_use :: #force_inline proc(handle: Texture_Handle, unit: u32) {
     when OPENGL {
-        texture_use_gl(handle)
+        texture_use_gl(handle, unit)
     } else {
         #assert(false, "Error! Missing implementation.")
     }

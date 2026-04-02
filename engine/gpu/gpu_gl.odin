@@ -215,8 +215,8 @@ vertex_buffer_create_gl :: proc(def: Vertex_Buffer_Def) -> Vertex_Buffer_GL {
     gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
 
     usage  := u32(def.data != nil ? gl.STATIC_DRAW : gl.DYNAMIC_DRAW)
-    stride := i32(def.count > 0 ? def.vsize : 0)
-    offset := 0
+    stride := i32(def.count)
+    offset: uintptr
     
     gl.BufferData(gl.ARRAY_BUFFER, def.vsize * def.count, def.data, usage)
     
@@ -225,11 +225,11 @@ vertex_buffer_create_gl :: proc(def: Vertex_Buffer_Def) -> Vertex_Buffer_GL {
 
         gl.EnableVertexAttribArray(u32(i))
         if !data_type_is_integer(attr) {
-            gl.VertexAttribPointer(u32(i), i32(data_type_len(attr)), data_type_to_gl(attr), gl.FALSE, stride, uintptr(offset))
+            gl.VertexAttribPointer(u32(i), i32(data_type_len(attr)), data_type_to_gl(attr), gl.FALSE, stride, offset)
         } else {
-            gl.VertexAttribIPointer(u32(i), i32(data_type_len(attr)), data_type_to_gl(attr), stride, uintptr(offset))
+            gl.VertexAttribIPointer(u32(i), i32(data_type_len(attr)), data_type_to_gl(attr), stride, offset)
         }
-        offset += data_type_size(attr)
+        offset += uintptr(data_type_size(attr))
     }
 
     gl.GenBuffers(1, &ebo)
@@ -524,15 +524,97 @@ texture_rem_gl :: #force_inline proc(handle: Texture_Handle) {
 }
 
 texture_create_gl :: proc(def: Texture_Def) -> Texture_GL {
-    return {}
+    
+    width, height, channels: c.int
+    pixels: [^]byte
+    stb_loaded: bool
+
+    defer {
+        if stb_loaded {
+            stb_image.image_free(pixels)
+        }
+    }
+
+    if len(def.filename) > 0 {
+        filename := strings.clone_to_cstring(def.filename, context.temp_allocator)
+        pixels = stb_image.load(filename, &width, &height, &channels, 4)
+        stb_loaded = pixels != nil
+        assert(stb_loaded, "Error: Invalid texture filename.")
+    } else {
+        pixels   = raw_data(def.pixels)
+        width    = c.int(def.width)
+        height   = c.int(def.height) 
+        channels = c.int(def.channels)
+    }
+
+    valid_pixels   := pixels != nil
+    valid_size     := i32(len(def.pixels)) == width * height
+    valid_channels := channels == 3 || channels == 4
+
+    assert(valid_pixels,   "Error: Missing pixel data.")
+    assert(valid_size,     "Error: Image size mismatch.")
+    assert(valid_channels, "Error: unsupported channel count.")
+
+    if !valid_pixels || !valid_size || !valid_channels {
+        return {}
+    }
+    
+    internal_format: u32
+    switch channels {
+        case 3: internal_format = gl.RGB8
+        case 4: internal_format = gl.RGBA8
+        case: {
+            assert(false, "Error: unsupported internal format.")
+            return {}
+        }
+    }
+
+    format: u32
+    switch channels {
+        case 3: format = gl.RGB
+        case 4: format = gl.RGBA
+        case: {
+            assert(false, "Error: unsupported format.")
+            return {}
+        }
+    }
+    
+    filter: i32
+    switch def.filter {
+        case .Nearest: filter = gl.NEAREST
+        case .Linear:  filter = gl.LINEAR
+        case: {
+            assert(false, "Error: unsupported texture filter.")
+        }
+    }
+
+    // Reserve the storage.
+    texture: u32
+    gl.CreateTextures(gl.TEXTURE_2D, 1, &texture)
+    gl.TextureStorage2D(texture, 1, internal_format, width, height)
+
+    // Config.
+    gl.TextureParameteri(texture, gl.TEXTURE_MIN_FILTER, filter)
+    gl.TextureParameteri(texture, gl.TEXTURE_MAG_FILTER, filter)
+    gl.TextureParameteri(texture, gl.TEXTURE_WRAP_S, gl.REPEAT)
+    gl.TextureParameteri(texture, gl.TEXTURE_WRAP_T, gl.REPEAT)
+
+    // Fill the storage.
+    gl.TextureSubImage2D(texture, 0, 0, 0, width, height, format, gl.UNSIGNED_BYTE, pixels)
+
+    return {
+        tex = texture
+    }
 }
 
 texture_destroy_gl :: proc(texture: ^Texture_GL) {
+    gl.DeleteTextures(1, &texture.tex)
     texture^ = {}
 }
 
-texture_use_gl :: proc(handle: Texture_Handle) {
+texture_use_gl :: proc(handle: Texture_Handle, unit: u32) {
     texture := texture_get_gl(handle)
+    gl.BindTextureUnit(unit, texture.tex)
 }
 
 // ====================================================================
@@ -574,3 +656,4 @@ import "core:container/handle_map"
 
 import gl "vendor:OpenGL"
 import sdl "vendor:sdl3"
+import stb_image "vendor:stb/image"
