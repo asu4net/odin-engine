@@ -128,7 +128,33 @@ swap_buffers_gl :: #force_inline proc() {
 
 clear_screen_gl :: #force_inline proc(color: [4]f32 = {0, 0, 0, 1}) {
 	gl.ClearColor(color.r, color.g, color.b, 1)
-	gl.Clear(gl.COLOR_BUFFER_BIT)
+	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+}
+
+set_viewport_gl :: proc(viewport: [2] i32) {
+    gl.Viewport(0, 0, viewport.x, viewport.y)
+}
+
+set_blending_enabled_gl :: proc(enabled: b32 = true) {
+    if enabled {
+        gl.Enable(gl.BLEND)
+        return
+    }
+    gl.Disable(gl.BLEND)
+}
+
+set_blending_mode_gl :: proc(blending_mode: Blending_Mode) {
+    set_blending_enabled_gl()
+    switch blending_mode {
+        case .Solid:
+            gl.BlendFunc(gl.ONE, gl.ZERO)                
+        case .Alpha:
+            gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA) 
+        case .Add:
+            gl.BlendFunc(gl.SRC_ALPHA, gl.ONE)                 
+        case .Multiply: 
+            gl.BlendFuncSeparate(gl.DST_COLOR, gl.ONE, gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)                
+    }
 }
 
 debug_callback_gl :: proc "c" (source: u32, type: u32, id: u32, severity: u32, length: i32, message: cstring, user_param: rawptr) {
@@ -528,6 +554,7 @@ texture_create_gl :: proc(def: Texture_Def) -> Texture_GL {
     width, height, channels: c.int
     pixels: [^]byte
     stb_loaded: bool
+    pixels_len: c.int
 
     defer {
         if stb_loaded {
@@ -536,26 +563,39 @@ texture_create_gl :: proc(def: Texture_Def) -> Texture_GL {
     }
 
     if len(def.filename) > 0 {
+        
         filename := strings.clone_to_cstring(def.filename, context.temp_allocator)
+        stb_image.set_flip_vertically_on_load(1)
         pixels = stb_image.load(filename, &width, &height, &channels, 4)
+        
         stb_loaded = pixels != nil
         assert(stb_loaded, "Error: Invalid texture filename.")
+        
+        if !stb_loaded {
+            return {}
+        }
+
     } else {
-        pixels   = raw_data(def.pixels)
-        width    = c.int(def.width)
-        height   = c.int(def.height) 
-        channels = c.int(def.channels)
+        pixels     = raw_data(def.pixels)
+        width      = c.int(def.width)
+        height     = c.int(def.height) 
+        channels   = c.int(def.channels)
+
+        valid_pixels   := pixels != nil
+        valid_size := i32(len(def.pixels)) == width * height
+        
+        assert(valid_pixels,   "Error: Missing pixel data.")
+        assert(valid_size,"Error: Image size mismatch.")
+        
+        if !valid_size || !valid_pixels {
+            return {}
+        }
     }
 
-    valid_pixels   := pixels != nil
-    valid_size     := i32(len(def.pixels)) == width * height
     valid_channels := channels == 3 || channels == 4
-
-    assert(valid_pixels,   "Error: Missing pixel data.")
-    assert(valid_size,     "Error: Image size mismatch.")
     assert(valid_channels, "Error: unsupported channel count.")
 
-    if !valid_pixels || !valid_size || !valid_channels {
+    if !valid_channels {
         return {}
     }
     

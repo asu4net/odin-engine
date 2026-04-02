@@ -29,7 +29,8 @@
                 "type": "cppvsdbg",
                 "request": "launch",
                 "program": "${workspaceFolder}/.out/debug/game.exe",
-                "stopAtEntry": false
+                "stopAtEntry": false,
+                "cwd": "${workspaceFolder}/game"
             }
         ]
     }

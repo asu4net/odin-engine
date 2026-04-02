@@ -101,6 +101,37 @@ clear_screen :: #force_inline proc(color: [4]f32 = {0, 0, 0, 1}) {
     }
 }
 
+set_viewport :: #force_inline proc(viewport: [2] i32) {
+    when OPENGL {
+        set_viewport_gl(viewport)
+    } else {
+        #assert(false, "Error! Missing implementation.")
+    }
+}
+
+set_blending_enabled :: #force_inline proc(enabled: b32 = true) {
+    when OPENGL {
+        set_blending_enabled_gl(enabled)
+    } else {
+        #assert(false, "Error! Missing implementation.")
+    }
+}
+
+Blending_Mode :: enum {
+    Solid,
+    Alpha,
+    Add,
+    Multiply,
+}
+
+set_blending_mode :: proc(blending_mode: Blending_Mode) {
+    when OPENGL {
+        set_blending_mode_gl(blending_mode)
+    } else {
+        #assert(false, "Error! Missing implementation.")
+    }
+}
+
 // ====================================================================
 // @Region: Shader
 // ====================================================================
