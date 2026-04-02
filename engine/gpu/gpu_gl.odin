@@ -630,8 +630,10 @@ texture_create_gl :: proc(def: Texture_Def) -> Texture_GL {
 
     // Reserve the storage.
     texture: u32
-    gl.CreateTextures(gl.TEXTURE_2D, 1, &texture)
-    gl.TextureStorage2D(texture, 1, internal_format, width, height)
+    gl.GenTextures(1, &texture)
+    gl.BindTexture(gl.TEXTURE_2D, texture)
+
+    gl.TexStorage2D(gl.TEXTURE_2D, 1, internal_format, width, height)
 
     // Config.
     gl.TextureParameteri(texture, gl.TEXTURE_MIN_FILTER, filter)
@@ -640,7 +642,8 @@ texture_create_gl :: proc(def: Texture_Def) -> Texture_GL {
     gl.TextureParameteri(texture, gl.TEXTURE_WRAP_T, gl.REPEAT)
 
     // Fill the storage.
-    gl.TextureSubImage2D(texture, 0, 0, 0, width, height, format, gl.UNSIGNED_BYTE, pixels)
+    gl.TexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, width, height, format, gl.UNSIGNED_BYTE, pixels)
+    gl.BindTexture(gl.TEXTURE_2D, 0)
 
     return {
         tex = texture
@@ -654,7 +657,8 @@ texture_destroy_gl :: proc(texture: ^Texture_GL) {
 
 texture_use_gl :: proc(handle: Texture_Handle, unit: u32) {
     texture := texture_get_gl(handle)
-    gl.BindTextureUnit(unit, texture.tex)
+    gl.ActiveTexture(gl.TEXTURE0 + unit)
+    gl.BindTexture(gl.TEXTURE_2D, texture.tex)
 }
 
 // ====================================================================
