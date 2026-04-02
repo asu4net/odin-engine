@@ -634,10 +634,10 @@ texture_create_gl :: proc(def: Texture_Def) -> Texture_GL {
     gl.BindTexture(gl.TEXTURE_2D, texture)
 
     // Config.
-    gl.TextureParameteri(texture, gl.TEXTURE_MIN_FILTER, filter)
-    gl.TextureParameteri(texture, gl.TEXTURE_MAG_FILTER, filter)
-    gl.TextureParameteri(texture, gl.TEXTURE_WRAP_S, gl.REPEAT)
-    gl.TextureParameteri(texture, gl.TEXTURE_WRAP_T, gl.REPEAT)
+    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter)
+    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter)
+    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
+    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
 
     gl.TexImage2D(gl.TEXTURE_2D, 0, internal_format, width, height, 0, format, gl.UNSIGNED_BYTE, pixels)
     gl.BindTexture(gl.TEXTURE_2D, 0)
