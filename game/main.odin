@@ -19,6 +19,7 @@ main :: proc() {
 				for _, entry in track.allocation_map {
 					log.errorf("- %v bytes @ %v\n", entry.size, entry.location)
 				}
+				assert(false)
 			}
 			mem.tracking_allocator_destroy(&track)
 		}
