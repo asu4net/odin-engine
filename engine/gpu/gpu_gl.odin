@@ -599,7 +599,7 @@ texture_create_gl :: proc(def: Texture_Def) -> Texture_GL {
         return {}
     }
     
-    internal_format: u32
+    internal_format: i32
     switch channels {
         case 3: internal_format = gl.RGB8
         case 4: internal_format = gl.RGBA8
@@ -633,16 +633,13 @@ texture_create_gl :: proc(def: Texture_Def) -> Texture_GL {
     gl.GenTextures(1, &texture)
     gl.BindTexture(gl.TEXTURE_2D, texture)
 
-    gl.TexStorage2D(gl.TEXTURE_2D, 1, internal_format, width, height)
-
     // Config.
     gl.TextureParameteri(texture, gl.TEXTURE_MIN_FILTER, filter)
     gl.TextureParameteri(texture, gl.TEXTURE_MAG_FILTER, filter)
     gl.TextureParameteri(texture, gl.TEXTURE_WRAP_S, gl.REPEAT)
     gl.TextureParameteri(texture, gl.TEXTURE_WRAP_T, gl.REPEAT)
 
-    // Fill the storage.
-    gl.TexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, width, height, format, gl.UNSIGNED_BYTE, pixels)
+    gl.TexImage2D(gl.TEXTURE_2D, 0, internal_format, width, height, 0, format, gl.UNSIGNED_BYTE, pixels)
     gl.BindTexture(gl.TEXTURE_2D, 0)
 
     return {
