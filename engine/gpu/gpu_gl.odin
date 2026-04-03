@@ -86,46 +86,54 @@ context_create_gl :: proc(window: ^sdl.Window) -> bool {
 }
 
 context_destroy_gl :: proc() {
+    
     if context_gl != nil {
-
-        // Clean the shaders.
-        for i in 1..<shader_map_gl.used_len {
-            shader_destroy_gl(&shader_map_gl.items[i])
+        {
+            it := xar.iterator(&storage.shader.items); it.idx = 1
+            for item in xar.iterate_by_ptr(&it) {
+                shader_destroy_gl(item)
+            }
+            handle_map.dynamic_destroy(&storage.shader)
         }
-        handle_map.clear(&shader_map_gl)
-
-        // Clean the vertex buffers.
-        for i in 1..<vertex_buffer_map_gl.used_len {
-            vertex_buffer_destroy_gl(&vertex_buffer_map_gl.items[i])
+        {
+            it := xar.iterator(&storage.vertex_buffer.items); it.idx = 1
+            for item in xar.iterate_by_ptr(&it) {
+                vertex_buffer_destroy_gl(item)
+            }
+            handle_map.dynamic_destroy(&storage.vertex_buffer)
         }
-        handle_map.clear(&vertex_buffer_map_gl)
-
-        // Clean the global buffers.
-        for i in 1..<global_buffer_map_gl.used_len {
-            global_buffer_destroy_gl(&global_buffer_map_gl.items[i])
+        {
+            it := xar.iterator(&storage.global_buffer.items); it.idx = 1
+            for item in xar.iterate_by_ptr(&it) {
+                global_buffer_destroy_gl(item)
+            }
+            handle_map.dynamic_destroy(&storage.global_buffer)
         }
-        handle_map.clear(&global_buffer_map_gl)
-
-        // Clean the textures.
-        for i in 1..<texture_map_gl.used_len {
-            texture_destroy_gl(&texture_map_gl.items[i])
+        {
+            it := xar.iterator(&storage.texture.items); it.idx = 1
+            for item in xar.iterate_by_ptr(&it) {
+                texture_destroy_gl(item)
+            }
+            handle_map.dynamic_destroy(&storage.texture)
         }
-        handle_map.clear(&texture_map_gl)
-
-        // Clean the framebuffers.
-        for i in 1..<framebuffer_map_gl.used_len {
-            framebuffer_destroy_gl(&framebuffer_map_gl.items[i])
+        {
+            it := xar.iterator(&storage.framebuffer.items); it.idx = 1
+            for item in xar.iterate_by_ptr(&it) {
+                framebuffer_destroy_gl(item)
+            }
+            handle_map.dynamic_destroy(&storage.framebuffer)
         }
-        handle_map.clear(&framebuffer_map_gl)
 
         log.info("GL SDL Context finish.")
+
         if !sdl.GL_DestroyContext(context_gl) {
 		    log.errorf("Error: sdl.DestroyContext: %v\n", sdl.GetError())
             return
         }
-
+        
         context_gl = nil
         window_gl = nil
+        storage = {}
     }
 }
 
@@ -221,12 +229,12 @@ Vertex_Buffer_GL :: struct {
     elem_count: i32,
 }
 
-vertex_buffer_add_gl :: #force_inline proc(def: Vertex_Buffer_Def) -> (handle: Vertex_Buffer_Handle, ok: bool) #optional_ok {
-    return handle_map.add(&vertex_buffer_map_gl, vertex_buffer_create_gl(def))
+vertex_buffer_add_gl :: #force_inline proc(def: Vertex_Buffer_Def) -> (handle: Vertex_Buffer_Handle) {
+    return handle_map.add(&storage.vertex_buffer, vertex_buffer_create_gl(def))
 }
 
 vertex_buffer_get_gl :: proc(handle: Vertex_Buffer_Handle) -> ^Vertex_Buffer_GL {
-    vb, ok := handle_map.get(&vertex_buffer_map_gl, handle)
+    vb, ok := handle_map.get(&storage.vertex_buffer, handle)
     assert(ok, "Error: Vertex Buffer not found")
     assert(vb.vao != 0 && vb.vbo != 0 && vb.ebo != 0, "Error: Invalid vertex buffer.")
     return vb
@@ -235,7 +243,7 @@ vertex_buffer_get_gl :: proc(handle: Vertex_Buffer_Handle) -> ^Vertex_Buffer_GL 
 vertex_buffer_rem_gl :: #force_inline proc(handle: Vertex_Buffer_Handle) {
     vb := vertex_buffer_get_gl(handle)
     vertex_buffer_destroy_gl(vb)
-    handle_map.remove(&vertex_buffer_map_gl, handle)
+    handle_map.remove(&storage.vertex_buffer, handle)
 }
 
 vertex_buffer_create_gl :: proc(def: Vertex_Buffer_Def) -> Vertex_Buffer_GL {
@@ -312,12 +320,12 @@ Shader_GL :: struct {
     program: u32,
 }
 
-shader_add_gl :: #force_inline proc(def: Shader_Def) -> (handle: Shader_Handle, ok: bool) #optional_ok {
-    return handle_map.add(&shader_map_gl, shader_create_gl(def))
+shader_add_gl :: #force_inline proc(def: Shader_Def) -> (handle: Shader_Handle) {
+    return handle_map.add(&storage.shader, shader_create_gl(def))
 }
 
 shader_get_gl :: #force_inline proc(handle: Shader_Handle) -> ^Shader_GL {
-    shader, ok := handle_map.get(&shader_map_gl, handle)
+    shader, ok := handle_map.get(&storage.shader, handle)
     assert(ok, "Error: Shader not found")
     assert(shader.program != 0, "Error: Invalid shader.")
     return shader
@@ -326,7 +334,7 @@ shader_get_gl :: #force_inline proc(handle: Shader_Handle) -> ^Shader_GL {
 shader_rem_gl :: #force_inline proc(handle: Shader_Handle) {
     shader := shader_get_gl(handle)
     shader_destroy_gl(shader)
-    handle_map.remove(&shader_map_gl, handle)
+    handle_map.remove(&storage.shader, handle)
 }
 
 shader_create_gl :: proc(def: Shader_Def) -> Shader_GL {	
@@ -485,12 +493,12 @@ Global_Buffer_GL :: struct {
     location: i32,
 }
 
-global_buffer_add_gl :: #force_inline proc(def: Global_Buffer_Def) -> (handle: Global_Buffer_Handle, ok: bool) #optional_ok {
-    return handle_map.add(&global_buffer_map_gl, global_buffer_create_gl(def))
+global_buffer_add_gl :: #force_inline proc(def: Global_Buffer_Def) -> (handle: Global_Buffer_Handle) {
+    return handle_map.add(&storage.global_buffer, global_buffer_create_gl(def))
 }
 
 global_buffer_get_gl :: #force_inline proc(handle: Global_Buffer_Handle) -> ^Global_Buffer_GL {
-    gb, ok := handle_map.get(&global_buffer_map_gl, handle)
+    gb, ok := handle_map.get(&storage.global_buffer, handle)
     assert(ok, "Error: Global buffer not found.")
     assert(gb.ubo != 0, "Error: Invalid global buffer.")
     return gb
@@ -499,7 +507,7 @@ global_buffer_get_gl :: #force_inline proc(handle: Global_Buffer_Handle) -> ^Glo
 global_buffer_rem_gl :: #force_inline proc(handle: Global_Buffer_Handle) {
     gb := global_buffer_get_gl(handle)
     global_buffer_destroy_gl(gb)
-    handle_map.remove(&global_buffer_map_gl, handle)
+    handle_map.remove(&storage.global_buffer, handle)
 }
 
 global_buffer_set_data_gl :: proc(handle: Global_Buffer_Handle, size: i32, data: rawptr) {
@@ -539,12 +547,12 @@ Texture_GL :: struct {
     tex: u32,
 }
 
-texture_add_gl :: #force_inline proc(def: Texture_Def) -> (handle: Texture_Handle, ok: bool) #optional_ok {
-    return handle_map.add(&texture_map_gl, texture_create_gl(def))
+texture_add_gl :: #force_inline proc(def: Texture_Def) -> (handle: Texture_Handle) {
+    return handle_map.add(&storage.texture, texture_create_gl(def))
 }
 
 texture_get_gl :: #force_inline proc(handle: Texture_Handle) -> ^Texture_GL {
-    texture, ok := handle_map.get(&texture_map_gl, handle)
+    texture, ok := handle_map.get(&storage.texture, handle)
     assert(ok, "Error: Texture not found")
     assert(texture.tex != 0, "Error: Invalid texture.")
     return texture
@@ -553,7 +561,7 @@ texture_get_gl :: #force_inline proc(handle: Texture_Handle) -> ^Texture_GL {
 texture_rem_gl :: #force_inline proc(handle: Texture_Handle) {
     texture := texture_get_gl(handle)
     texture_destroy_gl(texture)
-    handle_map.remove(&texture_map_gl, handle)
+    handle_map.remove(&storage.texture, handle)
 }
 
 texture_create_gl :: proc(def: Texture_Def) -> Texture_GL {
@@ -681,14 +689,14 @@ Framebuffer_GL :: struct {
     color_attachments: [MAX_FB_ATTACHMENTS] Attachment_GL
 }
 
-framebuffer_add_gl :: #force_inline proc(def: Framebuffer_Def) -> (handle: Framebuffer_Handle, ok: bool) #optional_ok {
-    handle, ok = handle_map.add(&framebuffer_map_gl, Framebuffer_GL{})
+framebuffer_add_gl :: #force_inline proc(def: Framebuffer_Def) -> (handle: Framebuffer_Handle) {
+    handle = handle_map.add(&storage.framebuffer, Framebuffer_GL{})
     framebuffer_invalidate_gl(handle)
     return
 }
 
 framebuffer_get_gl :: #force_inline proc(handle: Framebuffer_Handle) -> ^Framebuffer_GL {
-    framebuffer, ok := handle_map.get(&framebuffer_map_gl, handle)
+    framebuffer, ok := handle_map.get(&storage.framebuffer, handle)
     assert(ok, "Error: Framebuffer not found")
     assert(framebuffer.fbo != 0, "Error: Invalid framebuffer.")
     return framebuffer
@@ -697,7 +705,7 @@ framebuffer_get_gl :: #force_inline proc(handle: Framebuffer_Handle) -> ^Framebu
 framebuffer_rem_gl :: #force_inline proc(handle: Framebuffer_Handle) {
     framebuffer := framebuffer_get_gl(handle)
     framebuffer_destroy_gl(framebuffer)
-    handle_map.remove(&framebuffer_map_gl, handle)
+    handle_map.remove(&storage.framebuffer, handle)
 }
 
 framebuffer_invalidate_gl :: proc(handle: Framebuffer_Handle) {
@@ -735,13 +743,26 @@ when ODIN_OS != .Darwin {
 // @Globals:
 // ====================================================================
 
+@(private="file")
+Storage_Container :: handle_map.Dynamic_Handle_Map
+
+@(private="file")
+Storage_GL :: struct {
+    shader        : Storage_Container(Shader_GL        , Shader_Handle        ),
+    vertex_buffer : Storage_Container(Vertex_Buffer_GL , Vertex_Buffer_Handle ),
+    global_buffer : Storage_Container(Global_Buffer_GL , Global_Buffer_Handle ),
+    texture       : Storage_Container(Texture_GL       , Texture_Handle       ),
+    framebuffer   : Storage_Container(Framebuffer_GL   , Framebuffer_Handle   ),
+}
+
+@(private="file")
+storage: Storage_GL
+
+@(private="file")
 context_gl: sdl.GLContext
+
+@(private="file")
 window_gl: ^sdl.Window
-shader_map_gl: handle_map.Static_Handle_Map(MAX_SHADERS, Shader_GL, Shader_Handle)
-vertex_buffer_map_gl: handle_map.Static_Handle_Map(MAX_VERTEX_BUFFERS, Vertex_Buffer_GL, Vertex_Buffer_Handle)
-global_buffer_map_gl: handle_map.Static_Handle_Map(MAX_GLOBAL_BUFFERS, Global_Buffer_GL, Global_Buffer_Handle)
-texture_map_gl: handle_map.Static_Handle_Map(MAX_TEXTURES, Texture_GL, Texture_Handle)
-framebuffer_map_gl: handle_map.Static_Handle_Map(MAX_FRAMEBUFFERS, Framebuffer_GL, Framebuffer_Handle)
 
 } // when OPENGL
 
@@ -754,6 +775,7 @@ import "core:log"
 import "core:c"
 import "core:strings"
 import "core:container/handle_map"
+import "core:container/xar"
 
 import gl "vendor:OpenGL"
 import sdl "vendor:sdl3"

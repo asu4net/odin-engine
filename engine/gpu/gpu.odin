@@ -142,7 +142,7 @@ Shader_Def :: struct {
 
 Shader_Handle :: handle_map.Handle32
 
-shader_add :: #force_inline proc(def: Shader_Def) -> (handle: Shader_Handle, ok: bool) #optional_ok {
+shader_add :: #force_inline proc(def: Shader_Def) -> (handle: Shader_Handle) {
     when OPENGL {
         return shader_add_gl(def)
     } else {
@@ -245,7 +245,7 @@ Vertex_Buffer_Def :: struct {
 
 Vertex_Buffer_Handle :: handle_map.Handle32
 
-vertex_buffer_add :: #force_inline proc(def: Vertex_Buffer_Def) -> (handle: Vertex_Buffer_Handle, ok: bool) #optional_ok {
+vertex_buffer_add :: #force_inline proc(def: Vertex_Buffer_Def) -> (handle: Vertex_Buffer_Handle) {
     when OPENGL {
         return vertex_buffer_add_gl(def)
     } else {
@@ -291,7 +291,7 @@ Global_Buffer_Def :: struct {
 
 Global_Buffer_Handle :: handle_map.Handle32
 
-global_buffer_add :: #force_inline proc(def: Global_Buffer_Def) -> (handle: Global_Buffer_Handle, ok: bool) #optional_ok {
+global_buffer_add :: #force_inline proc(def: Global_Buffer_Def) -> (handle: Global_Buffer_Handle) {
     when OPENGL {
         return global_buffer_add_gl(def)
     } else {
@@ -347,7 +347,7 @@ Texture_Def :: struct {
     filter: Texture_Filter,
 }
 
-texture_add :: #force_inline proc(def: Texture_Def) -> (handle: Texture_Handle, ok: bool) #optional_ok {
+texture_add :: #force_inline proc(def: Texture_Def) -> (handle: Texture_Handle) {
     when OPENGL {
         return texture_add_gl(def)
     } else {
@@ -397,7 +397,7 @@ Framebuffer_Def :: struct {
     depth_attachment: Attachment_Def,
 }
 
-framebuffer_add :: #force_inline proc(def: Framebuffer_Def) -> (handle: Framebuffer_Handle, ok: bool) #optional_ok {
+framebuffer_add :: #force_inline proc(def: Framebuffer_Def) -> (handle: Framebuffer_Handle) {
     when OPENGL {
         return framebuffer_add_gl(def)
     } else {
