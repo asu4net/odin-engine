@@ -230,7 +230,10 @@ Vertex_Buffer_GL :: struct {
 }
 
 vertex_buffer_add_gl :: #force_inline proc(def: Vertex_Buffer_Def) -> (handle: Vertex_Buffer_Handle) {
-    return hm.add(&storage.vertex_buffer, vertex_buffer_create_gl(def))
+    h, err := hm.add(&storage.vertex_buffer, vertex_buffer_create_gl(def))
+    assert(err == .None, "Error (%v): Can't add the vertex buffer.")
+    handle = h
+    return
 }
 
 vertex_buffer_get_gl :: proc(handle: Vertex_Buffer_Handle) -> ^Vertex_Buffer_GL {
@@ -321,7 +324,10 @@ Shader_GL :: struct {
 }
 
 shader_add_gl :: #force_inline proc(def: Shader_Def) -> (handle: Shader_Handle) {
-    return hm.add(&storage.shader, shader_create_gl(def))
+    h, err := hm.add(&storage.shader, shader_create_gl(def))
+    assert(err == .None, "Error (%v): Can't add the shader.")
+    handle = h
+    return
 }
 
 shader_get_gl :: #force_inline proc(handle: Shader_Handle) -> ^Shader_GL {
@@ -494,7 +500,10 @@ Global_Buffer_GL :: struct {
 }
 
 global_buffer_add_gl :: #force_inline proc(def: Global_Buffer_Def) -> (handle: Global_Buffer_Handle) {
-    return hm.add(&storage.global_buffer, global_buffer_create_gl(def))
+    h, err := hm.add(&storage.global_buffer, global_buffer_create_gl(def))
+    assert(err == .None, "Error (%v): Can't add the global buffer.")
+    handle = h
+    return
 }
 
 global_buffer_get_gl :: #force_inline proc(handle: Global_Buffer_Handle) -> ^Global_Buffer_GL {
@@ -548,7 +557,10 @@ Texture_GL :: struct {
 }
 
 texture_add_gl :: #force_inline proc(def: Texture_Def) -> (handle: Texture_Handle) {
-    return hm.add(&storage.texture, texture_create_gl(def))
+    h, err := hm.add(&storage.texture, texture_create_gl(def))
+    assert(err == .None, "Error (%v): Can't add the texture.")
+    handle = h
+    return
 }
 
 texture_get_gl :: #force_inline proc(handle: Texture_Handle) -> ^Texture_GL {
@@ -690,8 +702,10 @@ Framebuffer_GL :: struct {
 }
 
 framebuffer_add_gl :: #force_inline proc(def: Framebuffer_Def) -> (handle: Framebuffer_Handle) {
-    handle = hm.add(&storage.framebuffer, Framebuffer_GL{})
-    framebuffer_invalidate_gl(handle)
+    h, err := hm.add(&storage.framebuffer, Framebuffer_GL{})
+    assert(err == .None, "Error (%v): Can't add the framebuffer.")
+    framebuffer_invalidate_gl(h)
+    handle = h
     return
 }
 
