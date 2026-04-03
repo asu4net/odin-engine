@@ -112,11 +112,18 @@ context_destroy_gl :: proc() {
         }
         handle_map.clear(&texture_map_gl)
 
+        // Clean the framebuffers.
+        for i in 1..<framebuffer_map_gl.used_len {
+            framebuffer_destroy_gl(&framebuffer_map_gl.items[i])
+        }
+        handle_map.clear(&framebuffer_map_gl)
+
         log.info("GL SDL Context finish.")
         if !sdl.GL_DestroyContext(context_gl) {
 		    log.errorf("Error: sdl.DestroyContext: %v\n", sdl.GetError())
             return
         }
+
         context_gl = nil
         window_gl = nil
     }
@@ -584,8 +591,8 @@ texture_create_gl :: proc(def: Texture_Def) -> Texture_GL {
         valid_pixels   := pixels != nil
         valid_size := i32(len(def.pixels)) == width * height
         
-        assert(valid_pixels,   "Error: Missing pixel data.")
-        assert(valid_size,"Error: Image size mismatch.")
+        assert(valid_pixels, "Error: Missing pixel data.")
+        assert(valid_size,   "Error: Image size mismatch.")
         
         if !valid_size || !valid_pixels {
             return {}
@@ -659,6 +666,58 @@ texture_use_gl :: proc(handle: Texture_Handle, unit: u32) {
 }
 
 // ====================================================================
+// @Region: Framebuffer.
+// ====================================================================
+
+Attachment_GL :: struct {
+    def: Attachment_Def,
+    tex: u32,
+}
+
+Framebuffer_GL :: struct {
+    handle: Framebuffer_Handle,
+    def: Framebuffer_Def,
+    fbo: u32,
+    color_attachments: [MAX_FB_ATTACHMENTS] Attachment_GL
+}
+
+framebuffer_add_gl :: #force_inline proc(def: Framebuffer_Def) -> (handle: Framebuffer_Handle, ok: bool) #optional_ok {
+    handle, ok = handle_map.add(&framebuffer_map_gl, Framebuffer_GL{})
+    framebuffer_invalidate_gl(handle)
+    return
+}
+
+framebuffer_get_gl :: #force_inline proc(handle: Framebuffer_Handle) -> ^Framebuffer_GL {
+    framebuffer, ok := handle_map.get(&framebuffer_map_gl, handle)
+    assert(ok, "Error: Framebuffer not found")
+    assert(framebuffer.fbo != 0, "Error: Invalid framebuffer.")
+    return framebuffer
+} 
+
+framebuffer_rem_gl :: #force_inline proc(handle: Framebuffer_Handle) {
+    framebuffer := framebuffer_get_gl(handle)
+    framebuffer_destroy_gl(framebuffer)
+    handle_map.remove(&framebuffer_map_gl, handle)
+}
+
+framebuffer_invalidate_gl :: proc(handle: Framebuffer_Handle) {
+    framebuffer := framebuffer_get_gl(handle)
+}
+
+framebuffer_destroy_gl :: proc(fb: ^Framebuffer_GL) {
+}
+
+framebuffer_read_pixel_gl :: proc(handle: Framebuffer_Handle, attachment_index: int, x: int, y: int) -> int {
+    return 0
+}
+
+framebuffer_clear_attachment_gl :: proc(handle: Framebuffer_Handle, attachment_index: int, value: int) {
+}
+
+framebuffer_clear_color_and_depth_gl :: proc(tint: [4] f32) {
+}
+
+// ====================================================================
 // @Constants:
 // ====================================================================
 
@@ -682,6 +741,7 @@ shader_map_gl: handle_map.Static_Handle_Map(MAX_SHADERS, Shader_GL, Shader_Handl
 vertex_buffer_map_gl: handle_map.Static_Handle_Map(MAX_VERTEX_BUFFERS, Vertex_Buffer_GL, Vertex_Buffer_Handle)
 global_buffer_map_gl: handle_map.Static_Handle_Map(MAX_GLOBAL_BUFFERS, Global_Buffer_GL, Global_Buffer_Handle)
 texture_map_gl: handle_map.Static_Handle_Map(MAX_TEXTURES, Texture_GL, Texture_Handle)
+framebuffer_map_gl: handle_map.Static_Handle_Map(MAX_FRAMEBUFFERS, Framebuffer_GL, Framebuffer_Handle)
 
 } // when OPENGL
 

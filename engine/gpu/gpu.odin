@@ -373,6 +373,81 @@ texture_use :: #force_inline proc(handle: Texture_Handle, unit: u32) {
 }
 
 // ====================================================================
+// @Region: Framebuffer.
+// ====================================================================
+
+Framebuffer_Handle :: handle_map.Handle32
+
+Texture_Format :: enum {
+    nil,
+    RGBA8,
+    Red_Integer,
+    Depth24_Stencil
+}
+
+Attachment_Def :: struct {
+    format: Texture_Format
+}
+
+Framebuffer_Def :: struct {
+    width: int,
+    height: int,
+    samples: int,
+    color_attachments: [] Attachment_Def,
+    depth_attachment: Attachment_Def,
+}
+
+framebuffer_add :: #force_inline proc(def: Framebuffer_Def) -> (handle: Framebuffer_Handle, ok: bool) #optional_ok {
+    when OPENGL {
+        return framebuffer_add_gl(def)
+    } else {
+        #assert(false, "Error! Missing implementation.")
+        return {}
+    }
+}
+
+framebuffer_rem :: #force_inline proc(handle: Framebuffer_Handle) {
+    when OPENGL {
+        framebuffer_rem_gl(handle)
+    } else {
+        #assert(false, "Error! Missing implementation.")
+    }
+}
+
+framebuffer_invalidate :: #force_inline proc(handle: Framebuffer_Handle) {
+    when OPENGL {
+        framebuffer_invalidate_gl(handle)
+    } else {
+        #assert(false, "Error! Missing implementation.")
+    }
+}
+
+framebuffer_read_pixel :: #force_inline proc(handle: Framebuffer_Handle, attachment_index: int, x: int, y: int) -> int {
+    when OPENGL {
+        return framebuffer_read_pixel_gl(handle, attachment_index, x, y)
+    } else {
+        #assert(false, "Error! Missing implementation.")
+        return 0
+    }
+}
+
+framebuffer_clear_attachment :: #force_inline proc(handle: Framebuffer_Handle, attachment_index: int, value: int) {
+    when OPENGL {
+        framebuffer_clear_attachment_gl(handle, attachment_index, value)
+    } else {
+        #assert(false, "Error! Missing implementation.")
+    }
+}
+
+framebuffer_clear_color_and_depth :: #force_inline proc(tint: [4] f32) {
+    when OPENGL {
+        framebuffer_clear_color_and_depth_gl(tint)
+    } else {
+        #assert(false, "Error! Missing implementation.")
+    }
+}
+
+// ====================================================================
 // @Constants:
 // ====================================================================
 
@@ -382,6 +457,9 @@ MAX_SHADERS        :: 100
 MAX_VERTEX_BUFFERS :: 100
 MAX_GLOBAL_BUFFERS :: 100
 MAX_TEXTURES       :: 100
+MAX_FRAMEBUFFERS   :: 30
+
+MAX_FB_ATTACHMENTS :: 30
 
 // ====================================================================
 // @Imports:
