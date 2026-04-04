@@ -58,8 +58,9 @@ Batch2D_Def :: struct {
 Batch2D :: struct($Vertex: typeid, $Max: int) {
     vertices      : [] Vertex,
     vertex_buffer : Vertex_Buffer_Handle,
-    shape_count   : int,
-    elem_count    : int,
+    curr_verts    : int,
+    curr_elems    : int,
+    curr_shader   : Shader_Handle,
     shader        : Shader_Handle,
 }
 
