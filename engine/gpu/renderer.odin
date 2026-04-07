@@ -128,9 +128,10 @@ batch2d_init :: proc(batch: ^Batch2D($Vertex, $Max), def: Batch2D_Def) {
     })
 
     batch.shader = shader_add(def.shader)
+    batch.curr_shader = batch.shader
 }
 
-batch2d_destroy :: proc(batch: ^Batch2D) {
+batch2d_destroy :: proc(batch: ^Batch2D($Vertex, $Max)) {
     assert(len(batch.vertices) != 0)
     delete(batch.vertices)
     vertex_buffer_rem(batch.vertex_buffer)
@@ -183,10 +184,25 @@ Renderer :: struct {
     viewport_gui  : [2] f32,
     pv_matrix     : matrix[4,4] f32,
     pv_matrix_gui : matrix[4,4] f32,
-    batch_quad    : Batch2D(Quad_Vertex, MAX_QUADS_PER_FRAME)
+    quad_batch    : Batch2D(Quad_Vertex, MAX_QUADS_PER_FRAME)
 }
 
-test :: proc(renderer: ^Renderer) {
-    def: Batch2D_Def
-    batch2d_init(&renderer.batch_quad, def)
+@(private="file")
+renderer: Renderer
+
+renderer_create :: proc() {
+    batch2d_init(&renderer.quad_batch, {
+        shader = { source = #load("assets/shaders/shader_quad.glsl", string) },
+        attrs  = {
+            .Float4, // pos
+            .Float4, // tint
+            .Float2, // uv
+            .Int,    // tex
+            .Int     // id
+        }
+    })
+}
+
+renderer_destroy :: proc() {
+    batch2d_destroy(&renderer.quad_batch)
 }
