@@ -206,3 +206,7 @@ renderer_create :: proc() {
 renderer_destroy :: proc() {
     batch2d_destroy(&renderer.quad_batch)
 }
+
+renderer_flush :: proc() {
+    
+}

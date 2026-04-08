@@ -1,7 +1,10 @@
 #ifdef VERTEX_SHADER
 
-layout(location = 0) in vec2 a_pos;
-layout(location = 1) in vec2 a_uv;
+layout(location = 0) in vec4 a_pos;
+layout(location = 1) in vec4 a_tint;
+layout(location = 2) in vec2 a_uv;
+layout(location = 3) in int  a_tex;
+layout(location = 4) in int  a_id;
 
 layout(std140) uniform Global_Buffer {
   mat4 u_projection;
@@ -13,7 +16,7 @@ layout(std140) uniform Global_Buffer {
 out vec2 v_uv;
 
 void main() {
-    gl_Position = u_projection_view * u_transform * vec4(a_pos.x, a_pos.y, 0.0, 1.0);
+    gl_Position = u_projection_view * a_pos;
     v_uv = a_uv;
 }
 #endif
