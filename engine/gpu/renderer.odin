@@ -189,6 +189,14 @@ Renderer :: struct {
 @(private="file")
 renderer: Renderer
 
+renderer_set_viewport :: #force_inline proc(viewport: [2] f32) {
+    renderer.viewport = viewport
+}
+
+renderer_set_pv_matrix :: #force_inline proc(pv_matrix: matrix [4, 4] f32) {
+    renderer.pv_matrix = pv_matrix
+}
+
 renderer_create :: proc() {
     renderer.camera = DEFAULT_RENDERER_CAMERA_2D
     batch2d_init(&renderer.quad_batch, {
@@ -221,14 +229,6 @@ renderer_change_blending :: proc(blending: Blending_Mode) {
     }
     renderer.blending = blending
     renderer_flush()
-}
-
-renderer_set_viewport :: #force_inline proc(viewport: [2] f32) {
-    renderer.viewport = viewport
-}
-
-renderer_set_pv_matrix :: #force_inline proc(pv_matrix: matrix [4, 4] f32) {
-    renderer.pv_matrix = pv_matrix
 }
 
 renderer_update_pv_matrix :: proc() {
