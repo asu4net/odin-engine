@@ -4,46 +4,45 @@ package gpu
 // @Region: Projection
 // ====================================================================
 
-Projection_Type :: enum {
+Renderer_Camera_Mode :: enum {
     nil,
-    Ortho_Screen,
-    Ortho_World,
-    Perspective,
+    GUI,
+    World_2D,
+    World_3D,
+    Custom,
 }
 
-Projection :: struct {
-    type   : Projection_Type,
-    eye    : [3] f32,
-    near   : f32,
-    far    : f32,
-    right  : [3] f32,
-    up     : [3] f32,
-    front  : [3] f32,
-    zoom   : f32, // 2D Specific.
-    fov    : f32, // 3D Specific.
+Renderer_Camera :: struct {
+    eye        : [3] f32,
+    near       : f32,
+    far        : f32,
+    right      : [3] f32,
+    up         : [3] f32,
+    front      : [3] f32,
+    zoom       : f32, // 2D Specific.
+    fov        : f32, // 3D Specific.
 }
 
-DEFAULT_PROJECTION_3D :: Projection {
-    type  = .Perspective,
-    eye   = { 0, 0, 40 },
-    near  = 0.1,
-    far   = 100,
-    right = { 1, 0, 0 },
-    up    = { 0, 1, 0 },
-    front = { 0, 0, 1 },
-    zoom  = 0,
-    fov   = 60
+DEFAULT_RENDERER_CAMERA_3D :: Renderer_Camera {
+    eye         = { 0, 0, 40 },
+    near        = 0.1,
+    far         = 100,
+    right       = { 1, 0, 0 },
+    up          = { 0, 1, 0 },
+    front       = { 0, 0, 1 },
+    zoom        = 0,
+    fov         = 60
 }
 
-DEFAULT_PROJECTION_2D :: Projection {
-    type  = .Ortho_World,
-    near  = 0,
-    far   = 1,
-    right = { 1, 0, 0 },
-    up    = { 0, 1, 0 },
-    front = { 0, 0, 1 },
-    zoom  = 3,
-    fov   = 0
+DEFAULT_RENDERER_CAMERA_2D :: Renderer_Camera {
+    eye        = { 0, 0, 0 },
+    near       = -1,
+    far        = +1,
+    right      = { 1, 0, 0 },
+    up         = { 0, 1, 0 },
+    front      = { 0, 0, 1 },
+    zoom       = 3,
+    fov        = 0
 }
 
 // ====================================================================
@@ -179,11 +178,11 @@ Renderer :: struct {
     textures      : Renderer_Textures,
     blending      : Blending_Mode,
     primitive     : Primitive_Type,
-    projection    : Projection,
+    camera_mode   : Renderer_Camera_Mode,
+    camera        : Renderer_Camera,
     viewport      : [2] f32,
     viewport_gui  : [2] f32,
     pv_matrix     : matrix[4,4] f32,
-    pv_matrix_gui : matrix[4,4] f32,
     quad_batch    : Batch2D(Quad_Vertex, MAX_QUADS_PER_FRAME)
 }
 
@@ -191,6 +190,7 @@ Renderer :: struct {
 renderer: Renderer
 
 renderer_create :: proc() {
+    renderer.camera = DEFAULT_RENDERER_CAMERA_2D
     batch2d_init(&renderer.quad_batch, {
         shader = { source = #load("assets/shaders/shader_quad.glsl", string) },
         attrs  = {
@@ -207,6 +207,65 @@ renderer_destroy :: proc() {
     batch2d_destroy(&renderer.quad_batch)
 }
 
-renderer_flush :: proc() {
-    
+renderer_change_primitive :: proc(primitive: Primitive_Type) {
+    if renderer.primitive == primitive {
+        return
+    }
+    renderer.primitive = primitive
+    renderer_flush()
 }
+
+renderer_change_blending :: proc(blending: Blending_Mode) {
+    if renderer.blending == blending {
+        return
+    }
+    renderer.blending = blending
+    renderer_flush()
+}
+
+renderer_set_viewport :: #force_inline proc(viewport: [2] f32) {
+    renderer.viewport = viewport
+}
+
+renderer_set_pv_matrix :: #force_inline proc(pv_matrix: matrix [4, 4] f32) {
+    renderer.pv_matrix = pv_matrix
+}
+
+renderer_update_pv_matrix :: proc() {
+    switch renderer.camera_mode {
+        case .Custom:
+
+        case .nil:
+            renderer.pv_matrix = alg.identity(matrix [4, 4] f32)
+
+        case .GUI:
+            viewport := renderer.viewport 
+            renderer.pv_matrix = alg.matrix_ortho3d(0, viewport.x, viewport.y, 0, -1, +1)
+
+        case .World_2D:
+            viewport  := renderer.viewport 
+            aspect    := viewport.x / viewport.y
+            near, far := renderer.camera.near, renderer.camera.far
+            zoom      := renderer.camera.zoom
+            width     := zoom * aspect
+            height    := zoom
+            renderer.pv_matrix = alg.matrix_ortho3d(-width, width, -height, height, near, far)
+            
+        case .World_3D:
+            fov       := renderer.camera.fov
+            viewport  := renderer.viewport 
+            aspect    := viewport.x / viewport.y
+            near, far := renderer.camera.near, renderer.camera.far
+            renderer.pv_matrix = alg.matrix4_perspective(fov, aspect, near, far)
+    }
+}
+
+renderer_flush :: proc() {
+    renderer_update_pv_matrix()
+}
+
+// ====================================================================
+// @Imports:
+// ====================================================================
+
+import alg "core:math/linalg"
