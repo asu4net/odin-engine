@@ -254,6 +254,15 @@ vertex_buffer_add :: #force_inline proc(def: Vertex_Buffer_Def) -> (handle: Vert
     }
 }
 
+vertex_buffer_valid :: #force_inline proc(handle: Vertex_Buffer_Handle) -> bool {
+    when OPENGL {
+        return vertex_buffer_valid_gl(handle)
+    } else {
+        #assert(false, "Error! Missing implementation.")
+        return false
+    }
+}
+
 vertex_buffer_rem :: #force_inline proc(handle: Vertex_Buffer_Handle) {
     when OPENGL {
         vertex_buffer_rem_gl(handle)

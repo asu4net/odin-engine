@@ -57,8 +57,8 @@ Batch2D_Def :: struct {
 Batch2D :: struct($Vertex: typeid, $Max: int) {
     vertices      : [] Vertex,
     vertex_buffer : Vertex_Buffer_Handle,
-    curr_verts    : int,
-    curr_elems    : int,
+    curr_verts    : i32,
+    curr_elems    : i32,
     curr_shader   : Shader_Handle,
     shader        : Shader_Handle,
 }
@@ -138,6 +138,15 @@ batch2d_destroy :: proc(batch: ^Batch2D($Vertex, $Max)) {
     batch^ = {}
 }
 
+batch2d_flush :: proc(batch: ^Batch2D($Vertex, $Max)) {
+    assert(vertex_buffer_valid(batch.vertex_buffer))
+    vertices := raw_data(batch.vertices[:])
+    vertex_buffer_set_data(renderer.quad_batch.vertex_buffer, i32(size_of(Quad_Vertex)) * batch.curr_verts, vertices)
+    vertex_buffer_draw(batch.vertex_buffer, batch.curr_elems)
+    batch.curr_elems = 0
+    batch.curr_verts = 0
+}
+
 // ====================================================================
 // @Region: Renderer
 // ====================================================================
@@ -169,9 +178,9 @@ MAX_TEXTURES_PER_FRAME :: 32
 
 Renderer_Textures :: struct {
     white      : Texture_Handle,
-    slot_array : [MAX_TEXTURES_PER_FRAME] int,
+    tex_array : [MAX_TEXTURES_PER_FRAME] i32,
     bind_array : [MAX_TEXTURES_PER_FRAME] Texture_Handle,
-    last_slot  : int,
+    last_slot  : i32,
 }
 
 Renderer :: struct {
@@ -261,7 +270,31 @@ renderer_update_pv_matrix :: proc() {
 }
 
 renderer_flush :: proc() {
+
     renderer_update_pv_matrix()
+
+    send_renderer_params :: proc(shader: Shader_Handle) {
+        shader_use(shader)
+
+        // Textures.
+        for texture, i in renderer.textures.bind_array {
+            texture_use(texture, u32(i))
+        }
+        tex_array_ptr := raw_data(renderer.textures.tex_array[:])
+        tex_len := i32(len(renderer.textures.tex_array))
+        shader_set_param_int_array(shader, "u_textures[0]", tex_array_ptr, tex_len)
+        
+        // PV Matrix.
+        shader_set_param_m4(shader, "u_projection_view", renderer.pv_matrix)
+    }
+
+    switch renderer.primitive {
+        case .nil:
+        case .Quad:
+            send_renderer_params(renderer.quad_batch.shader)
+            batch2d_flush(&renderer.quad_batch)
+        case .Circle:
+    } 
 }
 
 // ====================================================================

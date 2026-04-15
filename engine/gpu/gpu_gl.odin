@@ -236,6 +236,11 @@ vertex_buffer_add_gl :: #force_inline proc(def: Vertex_Buffer_Def) -> (handle: V
     return
 }
 
+vertex_buffer_valid_gl :: proc(handle: Vertex_Buffer_Handle) -> bool {
+    _, ok := hm.get(&storage.vertex_buffer, handle)
+    return ok
+}
+
 vertex_buffer_get_gl :: proc(handle: Vertex_Buffer_Handle) -> ^Vertex_Buffer_GL {
     vb, ok := hm.get(&storage.vertex_buffer, handle)
     assert(ok, "Error: Vertex Buffer not found")
